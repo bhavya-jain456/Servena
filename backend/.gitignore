@@ -1,0 +1,30 @@
+# Node
+node_modules/
+dist/
+
+# Logs
+*.log
+data/logs/
+
+# Environment
+.env
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+
+# Build artifacts
+swagger.json
+package-lock.json
+
+# Media
+*.mp4
+*.tiff
+*.avi
+*.flv
+*.mov
+*.wmv
