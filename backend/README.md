@@ -31,15 +31,9 @@
 cp .env.example .env    # Edit with your values
 npm install
 
-# 2. Start MongoDB and Redis (or use docker-compose)
-docker-compose up -d database redis
-
-# 3. Run
+# 2. Run
 npm run dev             # Development with nodemon
 npm start               # Production
-
-# 4. Full Docker
-docker-compose up --build
 ```
 
 Health check: `GET http://localhost:3000/v1/health`
@@ -120,8 +114,6 @@ Client Request
 ├── data/logs/                   # Error logs (winston)
 ├── public/                      # Static files (if needed)
 ├── swagger.json                 # Auto-generated at startup
-├── Dockerfile
-├── docker-compose.yml
 ├── .env.example
 └── .gitignore
 ```
@@ -515,19 +507,6 @@ cron.schedule('0 0 * * *', async () => {
 ```
 
 Set `RUN_CRON=true` in `.env` to enable.
-
----
-
-## Docker
-
-```bash
-# Development
-docker-compose up --build
-
-# Production
-docker build -t myapp .
-docker run -p 3000:3000 --env-file .env myapp
-```
 
 ---
 
