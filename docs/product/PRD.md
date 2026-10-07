@@ -5,9 +5,9 @@
 | Field | Value |
 |---|---|
 | Document | Phase 1 Product Requirements Document |
-| Version | **1.1** — v1.0 APPROVED by product owner 2026-10-07 (canonical PRD for Phase 1); v1.1 records the product owner's Application Flow review decisions PO-AF-01…04 (SPEC amendment A2, 2026-10-07; §71.5) |
+| Version | **1.2** — v1.0 APPROVED by product owner 2026-10-07 (canonical PRD for Phase 1); v1.1 records the product owner's Application Flow review decisions PO-AF-01…04 (SPEC amendment A2, 2026-10-07; §71.5); v1.2 records TRD review decisions PO-TRD-01…02 (SPEC amendment A3, 2026-10-07; §71.6) |
 | Date | 2026-10-07 |
-| Upstream (highest product source) | [SPEC v1.2](../../SPEC.md) — v1.0 approved 2026-10-07; v1.1 adds dated amendment A1 (2026-10-07) recording the decisions closed for this PRD; v1.2 adds amendment A2 (2026-10-07) recording PO-AF-01…04 |
+| Upstream (highest product source) | [SPEC v1.2](../../SPEC.md) — v1.0 approved 2026-10-07; v1.1 adds dated amendment A1 (2026-10-07) recording the decisions closed for this PRD; v1.2 adds amendment A2 (2026-10-07) recording PO-AF-01…04; v1.3 adds amendment A3 (2026-10-07) recording PO-TRD-01…02 |
 | Companion | [CAPABILITY-MAP.md](../../CAPABILITY-MAP.md) · [PRD_TRACEABILITY.md](PRD_TRACEABILITY.md) |
 | Background source | `SERVENA_Phase_1_User_Wise_Product_Workflow_and_Edge_Case_Hardening_v1.1.docx` (already reflected in SPEC) |
 | Downstream (not started) | TRD → Database Schema → UI/UX Design → Implementation Plan → Implementation |
@@ -1455,6 +1455,7 @@ An order exists.
 - **PRD-BILL-013.1** Discounts, reopen, refund, cancellation and payment corrections are audited.
 - **PRD-BILL-016.1** A Waiter cannot edit a Paid bill directly; they must reopen it first.
 - **PRD-BILL-017.1** A Waiter may reopen bills, including paid ones.
+- **PRD-BILL-018.1** Billing policy (default, outlet-configurable where stated): menu prices are tax-inclusive; GST rate and components are set per item or category and are CGST+SGST only; discounts are percent or flat, apply to the whole bill, before tax, with no cap; service and packaging charges are configured per outlet, off by default, and taxed at the rate of the items they apply to; tax is rounded per line (half-up) and the bill total is rounded to the nearest rupee with the round-off shown as a separate line; invoice numbers are one sequence per outlet, reset each 1 April, prefixed with an outlet code, and a cancelled bill keeps its number. *(PO-TRD-01)*
 - **PRD-ORG-023.1** applies: billing is never blocked by time of day.
 
 ### Permissions
@@ -1469,6 +1470,7 @@ Draft stays open (unresolved — §49) · finalize without payment · payment af
 ### Acceptance Criteria
 - **PRD-BILL-015.AC1** Given a table order, then exactly one bill exists for it; given a split payment, then still one bill exists.
 - **PRD-BILL-009.AC1** Given a bill is reprinted, then all amounts are identical and no financial field changed.
+- **PRD-BILL-018.AC1** Given the default policy and a tax-inclusive ₹105 item at 5% GST, then the bill shows ₹100 taxable, ₹2.50 CGST and ₹2.50 SGST; the total is rounded to the nearest rupee with a separate round-off line; and the invoice number is the next in that outlet's sequence for the current financial year.
 - **PRD-BILL-016.AC1** Given a Paid bill, when a Waiter tries to edit it, then it is refused; after the Waiter reopens it with a reason, editing is allowed.
 - **PRD-BILL-013.AC1** Given a discount is applied, then the audit trail records who applied it, when and the before/after amounts.
 
@@ -1591,6 +1593,7 @@ Discover menu → create order → submit → staff acceptance (customer-origina
 - **PRD-CUSTOMER-005.1** Customers have no accounts; tableless QR and website orders capture name + phone without OTP; customers reach their orders through a private, non-guessable link.
 - **PRD-CUSTOMER-015.1** The customer always sees their order's current state.
 - **PRD-CUSTOMER-021.1** Phone number is the primary customer matching key at organization scope. Operational order and history visibility stays outlet-scoped according to authorization (Owner cross-outlet, PRD-CUSTOMER-004.1); customers never get restaurant-wide access. WhatsApp captures the customer's name when available. There is no mandatory OTP. Matching never lets one customer's private order access expose another customer's order. *(OD-38)*
+- **PRD-CUSTOMER-022.1** A customer's private order link grants access to that one order only. Past orders are accessible only to restaurant users, within their authorization, for billing correction (reopen, refund, payment correction). *(PO-TRD-02)*
 
 ### Permissions
 ACT-CUS-01…03.
@@ -1763,6 +1766,7 @@ The day to reopen is the outlet's most recently closed day **and** the current r
 - **PRD-DAY-018.1** Reopening requires a reason.
 - **PRD-DAY-021.1** Reopening is blocked if the current running day has any transaction.
 - **PRD-DAY-025.1** For the Reopen Day block, a transaction is any persisted business operation that materially changes operational or financial state: order creation, modification or cancellation; item changes; KOT-related business changes; bill creation, finalization, reopen or cancellation; payment recording or correction; refunds; cash reconciliation; and relevant table/order operational changes. An order awaiting acceptance is a persisted order operation and counts. An uncommitted customer Draft does not count merely because it exists, and opening an empty table by itself does not count. *(OD-47)*
+- **PRD-DAY-026.1** Gross sales = Σ totals of bills finalized in the business day; net sales = gross sales − refunds recorded in that business day. *(PO-TRD-01)*
 - **PRD-DAY-024.1** On reopen, the empty running period becomes part of the reopened day, and the re-close timestamp becomes that day's boundary.
 - **PRD-AUDIT-008.1** The day's audit history shows Closed → Reopened → Reclosed.
 
@@ -1777,6 +1781,7 @@ Closed → Reopened → Reclosed.
 - **PRD-DAY-015.AC1** Given the running day has no transactions, when the Cashier reopens the last closed day with a reason, records a correction and re-closes, then the day's totals and cash reconciliation reflect the correction.
 - **PRD-DAY-015.AC2** Given a day that is not the most recently closed, when reopen is attempted, then it is refused.
 - **PRD-DAY-025.AC1** Given the running day contains only an opened empty table, then Reopen Day is allowed; given it contains a customer order awaiting acceptance, then Reopen Day is refused.
+- **PRD-DAY-026.AC1** Given bills finalized for ₹1,500 and ₹500 refunded the same day, then gross sales are ₹1,500 and net sales are ₹1,000.
 - **PRD-AUDIT-008.AC1** Given a reopen and re-close, then the audit trail shows Closed → Reopened → Reclosed with actors, times and reason.
 
 ## 48. Cash Reconciliation
@@ -2278,7 +2283,7 @@ Phase 1 is product-complete when:
 | Strict deny-by-default permissions | Some roles lack actions they may want (e.g., a Waiter cannot clear or transfer tables, print bills or see the dashboard) | Owner can extend roles within the catalogue (PRD-RBAC-005.1); every cell is explicit (PRD-RBAC-019.1) |
 | Acceptance bottleneck | Every customer-originated order waits for staff | Staff operational visibility of pending orders (PRD-ORD-008.2) |
 | Stale cancellation requests | Food may be prepared for an item the guest no longer wants | Stale requests become Attention items (PRD-ATTENTION-003.2); Served/Picked Up wins (PRD-ORD-093.1) |
-| Billing calculation detail deferred | GST, discount, charge, rounding and invoice-numbering rules are not yet specified | DEFERRED to the downstream specification (PQ-07, SPEC DF-14); PRD fixes behavior around them |
+| Billing calculation detail deferred | GST, discount, charge, rounding and invoice-numbering rules are not yet specified | RESOLVED by PO-TRD-01 (SPEC DF-14, A3): PRD-BILL-018.1, PRD-DAY-026.1; accounting beyond these is out of Phase 1 |
 | Overpayment on Draft bills | Items removed after payment create money owed back | Overpayment shown explicitly until resolved by authorized correction/refund (PRD-PAY-012.1) |
 | Owner Agent actions | Unsafe automation | Read-only by default; sensitive actions need explicit Owner confirmation; audited (PRD-AI-029.1) |
 | Customer identity without accounts | Duplicate or merged customer records | Phone key at organization scope; outlet-scoped visibility; private links (PRD-CUSTOMER-021.1) |
@@ -2302,7 +2307,7 @@ Phase 1 is product-complete when:
 | DF-11 | Concurrency mechanism | DEFERRED | TRD |
 | DF-12 | Private order-link mechanism | DEFERRED | TRD |
 | DF-13 | Draft inactivity threshold; stale cancellation-request threshold; Daily AI Brief trigger, time and delivery; staff-alert device, transport and layout; offline-eligible action list; Owner Agent tool implementation | DEFERRED | TRD / UI-UX brief |
-| DF-14 / PQ-07 | Billing calculation policies: GST/tax calculation, discount rules, service- and packaging-charge basis, rounding, invoice numbering, accounting treatment beyond PRD-DAY-022.1 | DEFERRED | Downstream specification (TRD / configuration) |
+| DF-14 / PQ-07 | Billing calculation policies: GST/tax calculation, discount rules, service- and packaging-charge basis, rounding, invoice numbering, accounting treatment beyond PRD-DAY-022.1 | RESOLVED (PO-TRD-01, A3) | PRD-BILL-018.1, PRD-DAY-026.1 |
 | DF-15 / PO-AF-01 | WhatsApp customer order tracking: how a WhatsApp customer receives order status, acceptance/rejection and the order-access link | DEFERRED by product owner ("ignore for now") | Later product decision |
 
 ## 71. Decision Record
@@ -2350,7 +2355,7 @@ Every decision below is CLOSED. Decisions OD-nn are final product decisions issu
 | PQ-04 | Quantitative success targets | No numeric targets in Phase 1; goals remain qualitative | DEFERRED (DF-01) |
 | PQ-05 | Activation checklist | PRD-ONB-033.1 | CONFIRMED |
 | PQ-06 | Reason categories | PRD-KDS-015.1 | CONFIRMED |
-| PQ-07 | Billing calculation policies | Not defined in the PRD; no PRD blocker | DEFERRED (DF-14) |
+| PQ-07 | Billing calculation policies | PRD-BILL-018.1, PRD-DAY-026.1 | RESOLVED (PO-TRD-01, DF-14) |
 | PQ-08 | Feedback channels | PRD-FEEDBACK-002.2 | CONFIRMED |
 
 ### 71.3 Contradictions with SPEC — resolved
@@ -2392,6 +2397,14 @@ No ambiguity from this list remains open.
 | PO-AF-03 | "When users scan they see a page which says your account has been suspended/blocked, please contact the SERVENA technical team for resolving this." | ONB-016 | PRD-ONB-016.1, PRD-ONB-016.AC1 | CONFIRMED |
 | PO-AF-04 | Resuming an abandoned customer Draft — "not needed" | ORD-094 | PRD-ORD-094.1, PRD-ORD-094.AC1 | CONFIRMED |
 
+
+### 71.6 TRD review decisions (SPEC amendment A3, 2026-10-07)
+
+| ID | Decision (as given by the product owner) | SPEC | PRD | Status |
+|---|---|---|---|---|
+| PO-TRD-01 | "approve defaults" — billing policy: tax-inclusive prices, CGST+SGST, whole-bill pre-tax discounts without cap, per-outlet service/packaging charges off by default, per-line half-up tax rounding with rupee round-off line, per-outlet invoice sequence reset each 1 April, gross/net sales formulas | BILL-018, DAY-026; DF-14 resolved | PRD-BILL-018.1, PRD-BILL-018.AC1, PRD-DAY-026.1, PRD-DAY-026.AC1 | CONFIRMED |
+| PO-TRD-02 | "The past orders are only for restaurant users to change the billing" | CUSTOMER-022 | PRD-CUSTOMER-022.1 | CONFIRMED |
+
 ---
 
-*End of PRD v1.1 — v1.0 APPROVED by the product owner on 2026-10-07; v1.1 records decisions PO-AF-01…04 (2026-10-07). This is the canonical Phase 1 PRD; any change requires an explicit, dated product-owner decision (PRD-SOT-002.1). Next document: TRD (not started).*
+*End of PRD v1.2 — v1.0 APPROVED by the product owner on 2026-10-07; v1.1 records decisions PO-AF-01…04, v1.2 records PO-TRD-01…02 (2026-10-07). This is the canonical Phase 1 PRD; any change requires an explicit, dated product-owner decision (PRD-SOT-002.1). Next document: TRD v1.0 (drafted).*

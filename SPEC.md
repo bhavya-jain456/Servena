@@ -5,11 +5,12 @@
 | Field | Value |
 |---|---|
 | Document | Phase 1 Canonical Product Specification (pre-PRD) |
-| Version | **1.2** — v1.0 APPROVED by product owner 2026-10-07; v1.1 adds dated amendment **A1 (2026-10-07)** recording the product owner's explicit decisions that closed every OPEN item during PRD finalization; v1.2 adds dated amendment **A2 (2026-10-07)** recording the product owner's decisions **[PO-AF-01…04]** given during Application Flow review (§40) |
+| Version | **1.3** — v1.0 APPROVED by product owner 2026-10-07; v1.1 adds dated amendment **A1 (2026-10-07)** recording the product owner's explicit decisions that closed every OPEN item during PRD finalization; v1.2 adds dated amendment **A2 (2026-10-07)** recording the product owner's decisions **[PO-AF-01…04]** given during Application Flow review (§40); v1.3 adds dated amendment **A3 (2026-10-07)** recording the billing-policy decision **[PO-TRD-01]** and the past-order access decision **[PO-TRD-02]** given during TRD review (§40) |
 | Date | 2026-10-07 |
 | Product source of truth | `SERVENA_Phase_1_User_Wise_Product_Workflow_and_Edge_Case_Hardening_v1.1.docx` — cited **[H§n]** |
 | Explicit user decisions | Locked decisions given 2026-10-07 — **[LD-n]** (numbered 1–40 in the order given) and the final action matrix — **[LD-MX]**; hardening instructions given 2026-10-07 — **[UD]** |
 | Application Flow decisions | Product-owner decisions given 2026-10-07 during review of `docs/APP_FLOW.md` — **[PO-AF-n]** (amendment A2, §40) |
+| TRD review decisions | Product-owner decisions given 2026-10-07 during review of `docs/TRD.md` — **[PO-TRD-n]** (amendment A3, §40) |
 | Not used | `SERVENA_Phase_1_User_Wise_Product_Workflow_Specification.docx` (v1.0). No requirement depends on it. |
 | Companion | [CAPABILITY-MAP.md](CAPABILITY-MAP.md) |
 
@@ -682,11 +683,13 @@ Cancelled = terminal outcome when authorized and applicable
 | BILL-015 | One bill per order / customer transaction context: Table → Order → Bill; no table → Takeaway Order → Bill; items may be added to the order until the bill is resolved; split payment is recorded at payment-information level without creating multiple bills | OD-07 | CONFIRMED (OD-07, approved 2026-10-07) |
 | BILL-016 | Paid bill: Waiter direct edit denied unless the authorized correction workflow (reopen) is invoked | H§40 | CONFIRMED |
 | BILL-017 | Waiter may reopen bills, including paid ones (reopen is that correction workflow) | LD-MX, H§36, H§40 (C-03) | CONFIRMED |
+| BILL-018 | **Billing policy** (default, outlet-configurable where stated): menu prices are tax-inclusive; GST rate and components are set per item or category and are CGST+SGST only; discounts are percent or flat, apply to the whole bill, before tax, with no cap; service and packaging charges are configured per outlet, off by default, and taxed at the rate of the items they apply to; tax is rounded per line (half-up) and the bill total is rounded to the nearest rupee with the round-off shown as a separate line; invoice numbers are one sequence per outlet, reset each 1 April, prefixed with an outlet code, and a cancelled bill keeps its number | PO-TRD-01 | CONFIRMED (PO-TRD-01; A3, 2026-10-07) |
 
 - BILL-004.AC1: Edit Finalized bill without reopen → denied.
 - BILL-006.AC1: ₹500 partial refund of ₹2,840 → recorded with amount + user.
 - BILL-007.AC1: Cancel bill → no refund created automatically.
 - BILL-009.AC1: Reprint → identical financial data.
+- BILL-018.AC1: Outlet with default policy; ₹105 tax-inclusive item at 5% GST → bill shows ₹100 taxable + ₹2.50 CGST + ₹2.50 SGST; total rounded to the nearest rupee with a separate round-off line; invoice number is the next in that outlet's sequence for the current financial year.
 
 ### 18.1 Cashier workflow [H§22]
 Open/review active bill (ACT-BIL-01) → verify items/taxes/discounts/charges → finalize (ACT-BIL-04) → record payment info (ACT-PAY-01) → printable/digital bill (ACT-BIL-08) → authorized reopen/refund/cancel (ACT-BIL-05/06/07) → preserve correction history (BILL-011). Cashier also performs Day Close / Reopen Day (ACT-DAY-02/03).
@@ -738,6 +741,7 @@ Discover Menu → Create Order → Submit → Staff Acceptance where applicable 
 | CUSTOMER-019 | Reorder never modifies the historical order | OD-09 | CONFIRMED (OD-09, approved 2026-10-07) |
 | CUSTOMER-020 | One-tap reorder is available from the customer's private order-access link for a historical order that reached Completed and contains reorderable items; cancelled/non-fulfillable items are not recreated. Reorder creates a new order submission using current menu, price, applicable tax, availability and outlet state and never mutates the historical order; it is rejected while the outlet is Closed. With a valid active table context it is associated with that table (joining the session's active order if one exists, TABLE-015); otherwise it is Takeaway. No customer account or OTP | OD-36 | CONFIRMED (OD-36; A1, 2026-10-07) |
 | CUSTOMER-021 | Phone number is the primary customer matching key at organization scope; order/history visibility stays outlet-scoped according to authorization; customers never get restaurant-wide access; WhatsApp captures the customer's name when available; no mandatory OTP; matching never lets one customer's private order access expose another customer's order | OD-38 | CONFIRMED (OD-38; A1, 2026-10-07) |
+| CUSTOMER-022 | A customer's private order link grants access to that one order only; past orders are accessible only to restaurant users, within their authorization, for billing correction (reopen, refund, payment correction) | PO-TRD-02 | CONFIRMED (PO-TRD-02; A3, 2026-10-07) |
 
 - CUSTOMER-014.AC1: Reorder with one unavailable item → item excluded and shown; nothing substituted.
 
@@ -781,11 +785,13 @@ Discover Menu → Create Order → Submit → Staff Acceptance where applicable 
 | DAY-023 | Temporal invariant: an outlet's business days are contiguous, non-overlapping periods, each ended by its Day Close timestamp; no operation may create overlapping or non-contiguous business days | OD-32, LD-9 | CONFIRMED (OD-32) |
 | DAY-024 | On reopen, the empty running period is absorbed into the reopened day; the re-close timestamp becomes that day's boundary | derived from OD-32, OD-04 | CONFIRMED (derived, approved 2026-10-07) |
 | DAY-025 | A transaction for DAY-021 is any persisted business operation that materially changes operational or financial state: order creation/modification/cancellation, item changes, KOT-related business changes, bill creation/finalization/reopen/cancellation, payment recording/correction, refunds, cash reconciliation and relevant table/order operational changes. An order awaiting acceptance counts; an uncommitted customer Draft does not count merely because it exists; opening an empty table alone does not count | OD-47 | CONFIRMED (OD-47; A1, 2026-10-07) |
+| DAY-026 | Gross sales = Σ totals of bills finalized in the business day; net sales = gross sales − refunds recorded in that business day | PO-TRD-01 | CONFIRMED (PO-TRD-01; A3, 2026-10-07) |
 
 - DAY-005.AC1: Transactions at 23:50 and 00:20, no close between → same business day.
 - DAY-006.AC1: Close at 01:30 → payment at 01:31 belongs to the next day.
 - DAY-009.AC1: Double submit → one closed-day record.
 - DAY-002.AC1: No Start Day action exists anywhere.
+- DAY-026.AC1: Bills finalized ₹1,500 and ₹500 refunded the same day → gross ₹1,500, net ₹1,000.
 
 ## 23. Cash Reconciliation and Unresolved Bills
 
@@ -1104,16 +1110,16 @@ ORD-071 (item states) left this list: it became CONFIRMED because OD-34 uses exa
 
 ## 35. Requirement Count
 
-Requirement-table rows (excludes SOT bullets, ACT rows, NG rows, PC rows, and the §34 / §2.3 reference tables); recomputed for v1.2:
+Requirement-table rows (excludes SOT bullets, ACT rows, NG rows, PC rows, and the §34 / §2.3 reference tables); recomputed for v1.3:
 
 | Status | Rows |
 |---|---|
-| CONFIRMED | 370 |
+| CONFIRMED | 373 |
 | PROPOSED | 0 |
 | OPEN | 0 |
 | DEFERRED | 7 |
 | EXCLUDED | 3 (+ NG-001…016) |
-| **Total** | **380** |
+| **Total** | **383** |
 
 Action inventory: 88 ACT rows (87 active, ACT-TBL-02 WITHDRAWN); every cell is decided — no `?` cells remain (RBAC-019).
 
@@ -1187,7 +1193,7 @@ No OPEN or PROPOSED items remain in this SPEC.
 | DF-11 | Concurrency/conflict mechanism | TRD |
 | DF-12 | Private order-link/token mechanism (generation, expiry, revocation) | TRD |
 | DF-13 | Technical thresholds and delivery mechanics: Draft inactivity threshold (ORD-064), stale cancellation-request threshold (ORD-093), Daily AI Brief trigger/time/delivery mechanism (AI-026), staff-alert device/notification transport/layout, offline-eligible action list (OFFLINE-008), Owner Agent tool implementation (AI-029) — added A1 | TRD / UI-UX brief |
-| DF-14 | Billing calculation policies: GST/tax calculation, discount rules, service- and packaging-charge basis, rounding, invoice numbering, accounting treatment beyond DAY-022 — added A1 | Downstream specification (TRD / configuration) |
+| DF-14 | Billing calculation policies: GST/tax calculation, discount rules, service- and packaging-charge basis, rounding, invoice numbering, accounting treatment beyond DAY-022 — added A1. **RESOLVED by A3 (PO-TRD-01): BILL-018, DAY-026.** Accounting treatment beyond these remains out of Phase 1 | Resolved — TRD §25.4 implements |
 | DF-15 | WhatsApp customer order tracking: how a WhatsApp customer receives order status, acceptance/rejection and the order-access link — deferred by the product owner ("ignore for now") | Later product decision (PO-AF-01, A2) |
 
 ## 38. Contradictions and Reconciliation
@@ -1227,7 +1233,7 @@ No open contradictions.
 
 ## 39. Approval Status
 
-**SPEC v1.2** — v1.0 APPROVED by the product owner on 2026-10-07; amendment A1 (2026-10-07) records the product owner's explicit decisions issued for PRD finalization; amendment A2 (2026-10-07) records the product owner's decisions given during Application Flow review.
+**SPEC v1.3** — v1.0 APPROVED by the product owner on 2026-10-07; amendment A1 (2026-10-07) records the product owner's explicit decisions issued for PRD finalization; amendment A2 (2026-10-07) records the product owner's decisions given during Application Flow review; amendment A3 (2026-10-07) records the product owner's billing-policy and past-order access decisions given during TRD review.
 
 - No OPEN or PROPOSED items remain; no open contradictions; every permission cell is decided.
 - DEFERRED items (§37) belong to the documents named there.
@@ -1283,3 +1289,18 @@ ORG-032 (OD-43) · ORG-033 (OD-31) · ORG-034 (OD-42) · ONB-014 (OD-17) · ONB-
 **3. Deferred item added** — DF-15 (PO-AF-01).
 
 **4. Unchanged** — every other requirement, including ONB-014 (suspension keeps existing work running; ONB-016 governs only what a scanning customer sees), is unchanged.
+
+### A3 — 2026-10-07 — TRD review decisions
+
+**Reason for amendment.** During TRD review the product owner approved the proposed billing policy (TRD PB-1, delegated by DF-14) and clarified who accesses past orders. Under SOT-002 they are recorded here with date and ID. No requirement ID was renumbered or reused.
+
+| Decision | As given by the product owner | SPEC effect |
+|---|---|---|
+| PO-TRD-01 | "approve defaults" — the six billing defaults: (1) prices tax-inclusive, GST per item/category, CGST+SGST only; (2) discounts percent or flat, whole bill, before tax, no cap; (3) service/packaging per outlet, off by default, taxed at the items' rate; (4) tax rounded per line half-up, total rounded to nearest rupee with a separate round-off line; (5) invoice numbers per outlet, reset each 1 April, outlet-code prefix, cancelled bill keeps its number; (6) gross sales = Σ finalized bill totals, net = gross − refunds recorded that day | BILL-018, DAY-026 added; DF-14 resolved |
+| PO-TRD-02 | "The past orders are only for restaurant users to change the billing" | CUSTOMER-022 added |
+
+**1. New CONFIRMED requirements** — BILL-018 (+ BILL-018.AC1) and DAY-026 (+ DAY-026.AC1) (PO-TRD-01); CUSTOMER-022 (PO-TRD-02).
+
+**2. Deferred item resolved** — DF-14. The GST items (1, 4, 5) may carry GST-compliance implications; the product owner is advised to confirm them with their accountant. A later change to a policy value is a new dated decision and never rewrites finalized bills.
+
+**3. Unchanged** — every other requirement, including DAY-022 (finalization-based sales) and CUSTOMER-016/020 (reorder through the order's own link), is unchanged.

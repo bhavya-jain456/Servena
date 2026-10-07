@@ -1,19 +1,20 @@
 # SERVENA Phase 1 — PRD Traceability (SPEC v1.1 → PRD v1.0)
 
-Regenerated from [SPEC.md](../../SPEC.md) (v1.2, amendments A1 and A2) and [PRD.md](PRD.md) (v1.1 — v1.0 APPROVED by product owner 2026-10-07; v1.1 records PO-AF-01…04) on 2026-10-07. Each PRD ID embeds its SPEC ID (`PRD-<SPEC-ID>.<n>`); acceptance criteria are `PRD-<SPEC-ID>.AC<n>`. "via X" = covered inside PRD requirement X (listed there as *also:*).
+Regenerated from [SPEC.md](../../SPEC.md) (v1.3, amendments A1, A2 and A3) and [PRD.md](PRD.md) (v1.2 — v1.0 APPROVED by product owner 2026-10-07; v1.1 records PO-AF-01…04; v1.2 records PO-TRD-01…02) on 2026-10-07. Each PRD ID embeds its SPEC ID (`PRD-<SPEC-ID>.<n>`); acceptance criteria are `PRD-<SPEC-ID>.AC<n>`. "via X" = covered inside PRD requirement X (listed there as *also:*).
 
 ## 1. Validation Result
 
 | # | Check | Result |
 |---|---|---|
-| 1 | Every CONFIRMED SPEC requirement (incl. SOT, PC), catalogue row and EXCLUDED item is covered by ≥1 PRD requirement | **0 uncovered** of 492 |
-| 2 | Every PRD requirement / acceptance criterion has an existing upstream SPEC ID | **0 orphans** of 697 |
+| 1 | Every CONFIRMED SPEC requirement (incl. SOT, PC), catalogue row and EXCLUDED item is covered by ≥1 PRD requirement | **0 uncovered** of 495 |
+| 2 | Every PRD requirement / acceptance criterion has an existing upstream SPEC ID | **0 orphans** of 702 |
 | 3 | Unresolved permission cells (`?`) in PRD §13.4 | **0** |
 | 4 | OPEN or PROPOSED items in SPEC v1.2 | **0** |
 | 5 | Unresolved OD-12…OD-47 (incl. OD-45.1) | **0** of 26 |
-| 6 | Unresolved PQ-01…PQ-08 | **0** of 8 (PQ-04, PQ-07 DEFERRED) |
+| 6 | Unresolved PQ-01…PQ-08 | **0** of 8 (PQ-04 DEFERRED; PQ-07 RESOLVED by PO-TRD-01) |
 | 7 | A-PRD-01…A-PRD-12 remaining open | **0** of 12 (all resolved, §71.4) |
 | 8 | C-PRD-01…C-PRD-04 unresolved | **0** of 4 (all resolved, §71.3) |
+| 8b | PO-TRD-01…PO-TRD-02 (TRD review decisions, SPEC A3) recorded | **2** of 2 (PRD §71.6; DF-14 resolved) |
 | 8a | PO-AF-01…PO-AF-04 (Application Flow review decisions, SPEC A2) recorded | **4** of 4 (PRD §71.5; PO-AF-01 DEFERRED as DF-15) |
 | 9 | Deferred items explicitly DEFERRED | 15 DF items and 7 DEFERRED SPEC rows listed in §5 |
 | 10 | Excluded items remain EXCLUDED | 19 EXCLUDED rows + NG items covered by PRD §6 |
@@ -25,15 +26,15 @@ Regenerated from [SPEC.md](../../SPEC.md) (v1.2, amendments A1 and A2) and [PRD.
 
 | Measure | Count |
 |---|---|
-| SPEC items traced | 500 |
-| — CONFIRMED requirements (incl. SOT, PC) | 386 |
+| SPEC items traced | 503 |
+| — CONFIRMED requirements (incl. SOT, PC) | 389 |
 | — Action-catalogue rows (active) | 87 |
 | — WITHDRAWN catalogue rows | 1 |
 | — EXCLUDED (incl. NG) | 19 |
 | — DEFERRED | 7 |
 | — OPEN / PROPOSED | 0 |
-| PRD requirements (all CONFIRMED) | 502 |
-| PRD acceptance criteria (all CONFIRMED) | 195 |
+| PRD requirements (all CONFIRMED) | 505 |
+| PRD acceptance criteria (all CONFIRMED) | 197 |
 
 ## 3. Decision Index (all closed 2026-10-07)
 
@@ -71,12 +72,14 @@ Regenerated from [SPEC.md](../../SPEC.md) (v1.2, amendments A1 and A2) and [PRD.
 | PQ-04 | — | No numeric targets in Phase 1; goals remain qualitative | DEFERRED (DF-01) |
 | PQ-05 | — | PRD-ONB-033.1 | CONFIRMED |
 | PQ-06 | — | PRD-KDS-015.1 | CONFIRMED |
-| PQ-07 | — | Not defined in the PRD; no PRD blocker | DEFERRED (DF-14) |
+| PQ-07 | — | PRD-BILL-018.1, PRD-DAY-026.1 | RESOLVED (PO-TRD-01, DF-14) |
 | PQ-08 | — | PRD-FEEDBACK-002.2 | CONFIRMED |
 | PO-AF-01 | — (DF-15) | WhatsApp order tracking deferred (PRD §70) | DEFERRED |
 | PO-AF-02 | ORD-021 (amended A2) | PRD-ORD-021.1 (amended), PRD-ORD-021.AC2 — details only on the no-table QR | CONFIRMED |
 | PO-AF-03 | ONB-016 | PRD-ONB-016.1, PRD-ONB-016.AC1 — suspended/blocked page on QR scan | CONFIRMED |
 | PO-AF-04 | ORD-094 | PRD-ORD-094.1, PRD-ORD-094.AC1 — no Draft resumption | CONFIRMED |
+| PO-TRD-01 | BILL-018, DAY-026 (DF-14 resolved) | PRD-BILL-018.1, PRD-BILL-018.AC1, PRD-DAY-026.1, PRD-DAY-026.AC1 — billing policy defaults | CONFIRMED |
+| PO-TRD-02 | CUSTOMER-022 | PRD-CUSTOMER-022.1 — past orders restaurant-users-only | CONFIRMED |
 | C-PRD-01 | — | OD-14 — SPEC ORD-064 and TABLE-007 amended (A1); PRD-ORD-064.2, PRD-TABLE-007.1 | RESOLVED |
 | C-PRD-02 | — | OD-24 — SPEC PAY-003 amended (A1); PRD-PAY-003.1, PRD-PAY-011.1 | RESOLVED |
 | C-PRD-03 | — | OD-39 — SPEC BILL-005 amended, PAY-012 closed (A1); PRD-BILL-005.1, PRD-PAY-012.1 | RESOLVED |
@@ -346,6 +349,7 @@ Regenerated from [SPEC.md](../../SPEC.md) (v1.2, amendments A1 and A2) and [PRD.
 | BILL-015 | CONFIRMED | One bill per order / customer transaction context: Table → Order → Bill; no table → Takea… | PRD-BILL-015.1, PRD-BILL-015.AC1 | §38. Billing |
 | BILL-016 | CONFIRMED | Paid bill: Waiter direct edit denied unless the authorized correction workflow (reopen) i… | PRD-BILL-016.1, PRD-BILL-016.AC1 | §38. Billing |
 | BILL-017 | CONFIRMED | Waiter may reopen bills, including paid ones (reopen is that correction workflow) | PRD-BILL-017.1 | §38. Billing |
+| BILL-018 | CONFIRMED | Billing policy defaults (tax-inclusive, CGST+SGST, whole-bill pre-tax discounts, per-outlet charges, rounding, invoice numbering) (A3) | PRD-BILL-018.1, PRD-BILL-018.AC1 | §38. Billing |
 | PAY-001 | CONFIRMED | Record Paid or Not Paid | PRD-PAY-001.1 | §40. Payment Information |
 | PAY-002 | CONFIRMED | If paid, record payment mode: UPI, Cash, Card, Split | PRD-PAY-002.1 | §40. Payment Information |
 | PAY-003 | CONFIRMED | If the payment flow/provider supplies an online payment reference or transaction ID, it i… | PRD-PAY-003.1 | §40. Payment Information |
@@ -377,6 +381,7 @@ Regenerated from [SPEC.md](../../SPEC.md) (v1.2, amendments A1 and A2) and [PRD.
 | CUSTOMER-019 | CONFIRMED | Reorder never modifies the historical order | PRD-CUSTOMER-019.1, PRD-CUSTOMER-019.AC1 | §44. One-Tap Reorder |
 | CUSTOMER-020 | CONFIRMED | One-tap reorder is available from the customer's private order-access link for a historic… | PRD-CUSTOMER-020.1, PRD-CUSTOMER-020.AC1, PRD-CUSTOMER-020.AC2 | §44. One-Tap Reorder |
 | CUSTOMER-021 | CONFIRMED | Phone number is the primary customer matching key at organization scope; order/history vi… | PRD-CUSTOMER-021.1, PRD-CUSTOMER-021.AC1 | §42. Customer Experience |
+| CUSTOMER-022 | CONFIRMED | Order link = one order; past orders restaurant-users-only for billing correction (A3) | PRD-CUSTOMER-022.1 | §42. Customer Experience |
 | FEEDBACK-001 | CONFIRMED | Feedback is offered when the order reaches Completed | PRD-FEEDBACK-001.1, PRD-FEEDBACK-001.AC1 | §43. Customer Feedback |
 | FEEDBACK-002 | CONFIRMED | Customer submits rating/comment where supported | PRD-FEEDBACK-002.1, PRD-FEEDBACK-002.2, PRD-FEEDBACK-002.AC1 | §43. Customer Feedback |
 | FEEDBACK-003 | CONFIRMED | Feedback is associated with order, outlet and customer context | PRD-FEEDBACK-003.1 | §43. Customer Feedback |
@@ -408,6 +413,7 @@ Regenerated from [SPEC.md](../../SPEC.md) (v1.2, amendments A1 and A2) and [PRD.
 | DAY-023 | CONFIRMED | Temporal invariant: an outlet's business days are contiguous, non-overlapping periods, ea… | PRD-DAY-023.1 | §45. Business Day |
 | DAY-024 | CONFIRMED | On reopen, the empty running period is absorbed into the reopened day; the re-close times… | PRD-DAY-024.1 | §47. Reopen Day |
 | DAY-025 | CONFIRMED | A transaction for DAY-021 is any persisted business operation that materially changes ope… | PRD-DAY-025.1, PRD-DAY-025.AC1 | §47. Reopen Day |
+| DAY-026 | CONFIRMED | Gross = Σ finalized bill totals; net = gross − refunds recorded that day (A3) | PRD-DAY-026.1, PRD-DAY-026.AC1 | §46. Day Close |
 | CASH-001 | CONFIRMED | Reconciliation uses the same Day Close boundary; no midnight reset; no Start Day | PRD-CASH-001.1 | §48. Cash Reconciliation |
 | CASH-002 | CONFIRMED | Expected cash = total cash with the responsible user at the moment the day is closed | PRD-CASH-002.1 | §48. Cash Reconciliation |
 | CASH-003 | CONFIRMED | Actual/counted cash and variance are recorded | PRD-CASH-003.1 | §48. Cash Reconciliation |
@@ -616,7 +622,7 @@ Regenerated from [SPEC.md](../../SPEC.md) (v1.2, amendments A1 and A2) and [PRD.
 | DF-11 | Concurrency/conflict mechanism | TRD |
 | DF-12 | Private order-link/token mechanism (generation, expiry, revocation) | TRD |
 | DF-13 | Technical thresholds and delivery mechanics: Draft inactivity threshold (ORD-064), stale cancellation-request threshold (ORD-093), Daily AI… | TRD / UI-UX brief |
-| DF-14 | Billing calculation policies: GST/tax calculation, discount rules, service- and packaging-charge basis, rounding, invoice numbering, accoun… | Downstream specification (TRD / configuration) |
+| DF-14 | Billing calculation policies: GST/tax calculation, discount rules, service- and packaging-charge basis, rounding, invoice numbering, accoun… | RESOLVED (PO-TRD-01, A3): BILL-018, DAY-026 |
 | DF-15 | WhatsApp customer order tracking (status, acceptance/rejection, order-access link) — deferred by product owner (PO-AF-01) | Later product decision |
 
 DEFERRED SPEC rows: ONB-033, TABLE-013, KOT-010, KDS-015, AUDIT-006, ATTENTION-007, SEC-006. ONB-033 (DF-10) and KDS-015 (DF-08) were deferred *to the PRD* and are defined in PRD-ONB-033.1 and PRD-KDS-015.1.
