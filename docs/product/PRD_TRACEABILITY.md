@@ -1,20 +1,21 @@
 # SERVENA Phase 1 — PRD Traceability (SPEC v1.1 → PRD v1.0)
 
-Regenerated from [SPEC.md](../../SPEC.md) (v1.1, amendment A1) and [PRD.md](PRD.md) (v1.0 — FINALIZED, ready for product-owner approval) on 2026-10-07. Each PRD ID embeds its SPEC ID (`PRD-<SPEC-ID>.<n>`); acceptance criteria are `PRD-<SPEC-ID>.AC<n>`. "via X" = covered inside PRD requirement X (listed there as *also:*).
+Regenerated from [SPEC.md](../../SPEC.md) (v1.2, amendments A1 and A2) and [PRD.md](PRD.md) (v1.1 — v1.0 APPROVED by product owner 2026-10-07; v1.1 records PO-AF-01…04) on 2026-10-07. Each PRD ID embeds its SPEC ID (`PRD-<SPEC-ID>.<n>`); acceptance criteria are `PRD-<SPEC-ID>.AC<n>`. "via X" = covered inside PRD requirement X (listed there as *also:*).
 
 ## 1. Validation Result
 
 | # | Check | Result |
 |---|---|---|
-| 1 | Every CONFIRMED SPEC requirement (incl. SOT, PC), catalogue row and EXCLUDED item is covered by ≥1 PRD requirement | **0 uncovered** of 490 |
-| 2 | Every PRD requirement / acceptance criterion has an existing upstream SPEC ID | **0 orphans** of 692 |
+| 1 | Every CONFIRMED SPEC requirement (incl. SOT, PC), catalogue row and EXCLUDED item is covered by ≥1 PRD requirement | **0 uncovered** of 492 |
+| 2 | Every PRD requirement / acceptance criterion has an existing upstream SPEC ID | **0 orphans** of 697 |
 | 3 | Unresolved permission cells (`?`) in PRD §13.4 | **0** |
-| 4 | OPEN or PROPOSED items in SPEC v1.1 | **0** |
+| 4 | OPEN or PROPOSED items in SPEC v1.2 | **0** |
 | 5 | Unresolved OD-12…OD-47 (incl. OD-45.1) | **0** of 26 |
 | 6 | Unresolved PQ-01…PQ-08 | **0** of 8 (PQ-04, PQ-07 DEFERRED) |
 | 7 | A-PRD-01…A-PRD-12 remaining open | **0** of 12 (all resolved, §71.4) |
 | 8 | C-PRD-01…C-PRD-04 unresolved | **0** of 4 (all resolved, §71.3) |
-| 9 | Deferred items explicitly DEFERRED | 14 DF items and 7 DEFERRED SPEC rows listed in §5 |
+| 8a | PO-AF-01…PO-AF-04 (Application Flow review decisions, SPEC A2) recorded | **4** of 4 (PRD §71.5; PO-AF-01 DEFERRED as DF-15) |
+| 9 | Deferred items explicitly DEFERRED | 15 DF items and 7 DEFERRED SPEC rows listed in §5 |
 | 10 | Excluded items remain EXCLUDED | 19 EXCLUDED rows + NG items covered by PRD §6 |
 | — | Stale markers in PRD (`[PROPOSED`, `[OPEN`, "awaiting product", "decision required", TBD, TODO) | **0** |
 
@@ -24,15 +25,15 @@ Regenerated from [SPEC.md](../../SPEC.md) (v1.1, amendment A1) and [PRD.md](PRD.
 
 | Measure | Count |
 |---|---|
-| SPEC items traced | 498 |
-| — CONFIRMED requirements (incl. SOT, PC) | 384 |
+| SPEC items traced | 500 |
+| — CONFIRMED requirements (incl. SOT, PC) | 386 |
 | — Action-catalogue rows (active) | 87 |
 | — WITHDRAWN catalogue rows | 1 |
 | — EXCLUDED (incl. NG) | 19 |
 | — DEFERRED | 7 |
 | — OPEN / PROPOSED | 0 |
-| PRD requirements (all CONFIRMED) | 500 |
-| PRD acceptance criteria (all CONFIRMED) | 192 |
+| PRD requirements (all CONFIRMED) | 502 |
+| PRD acceptance criteria (all CONFIRMED) | 195 |
 
 ## 3. Decision Index (all closed 2026-10-07)
 
@@ -72,6 +73,10 @@ Regenerated from [SPEC.md](../../SPEC.md) (v1.1, amendment A1) and [PRD.md](PRD.
 | PQ-06 | — | PRD-KDS-015.1 | CONFIRMED |
 | PQ-07 | — | Not defined in the PRD; no PRD blocker | DEFERRED (DF-14) |
 | PQ-08 | — | PRD-FEEDBACK-002.2 | CONFIRMED |
+| PO-AF-01 | — (DF-15) | WhatsApp order tracking deferred (PRD §70) | DEFERRED |
+| PO-AF-02 | ORD-021 (amended A2) | PRD-ORD-021.1 (amended), PRD-ORD-021.AC2 — details only on the no-table QR | CONFIRMED |
+| PO-AF-03 | ONB-016 | PRD-ONB-016.1, PRD-ONB-016.AC1 — suspended/blocked page on QR scan | CONFIRMED |
+| PO-AF-04 | ORD-094 | PRD-ORD-094.1, PRD-ORD-094.AC1 — no Draft resumption | CONFIRMED |
 | C-PRD-01 | — | OD-14 — SPEC ORD-064 and TABLE-007 amended (A1); PRD-ORD-064.2, PRD-TABLE-007.1 | RESOLVED |
 | C-PRD-02 | — | OD-24 — SPEC PAY-003 amended (A1); PRD-PAY-003.1, PRD-PAY-011.1 | RESOLVED |
 | C-PRD-03 | — | OD-39 — SPEC BILL-005 amended, PAY-012 closed (A1); PRD-BILL-005.1, PRD-PAY-012.1 | RESOLVED |
@@ -150,6 +155,7 @@ Regenerated from [SPEC.md](../../SPEC.md) (v1.1, amendment A1) and [PRD.md](PRD.
 | ONB-013 | CONFIRMED | Email unavailable → provisioned account remains recoverable; onboarding retry path exists | PRD-ONB-013.1, PRD-ONB-013.AC1 | §10. SuperAdmin Onboarding |
 | ONB-014 | CONFIRMED | Suspension is a platform-level state: new business is blocked (no new order can be create… | PRD-ONB-014.1, PRD-ONB-014.AC1 | §10. SuperAdmin Onboarding |
 | ONB-015 | CONFIRMED | The Owner may add outlets after provisioning; a Manager cannot create outlets. Adding a s… | PRD-ONB-015.1, PRD-ONB-015.AC1 | §10. SuperAdmin Onboarding |
+| ONB-016 | CONFIRMED | Customer scanning a QR of a suspended/deactivated restaurant sees suspended/blocked page; no menu, no order (A2) | PRD-ONB-016.1, PRD-ONB-016.AC1 | §10. SuperAdmin Onboarding |
 | ONB-020 | CONFIRMED | Configure restaurant identity: name, brand, logo, contact | PRD-ONB-020.1 | §11. Owner Onboarding |
 | ONB-021 | CONFIRMED | Configure address/location and GST/tax information | PRD-ONB-021.1 | §11. Owner Onboarding |
 | ONB-022 | CONFIRMED | Configure restaurant type / cuisine template and operating configuration | PRD-ONB-022.1 | §11. Owner Onboarding |
@@ -253,7 +259,7 @@ Regenerated from [SPEC.md](../../SPEC.md) (v1.1, amendment A1) and [PRD.md](PRD.
 | ORD-007 | CONFIRMED | Order stays bound to the correct organization, outlet and table context | PRD-ORD-007.1, PRD-ORD-007.AC1 | §21. QR Ordering |
 | ORD-008 | CONFIRMED | Customer-originated orders (table QR, tableless QR, website, WhatsApp) require staff acce… | PRD-ORD-008.1, PRD-ORD-008.AC1, PRD-ORD-008.AC2, PRD-ORD-008.2 | §28. Unified Order Engine; §54. Notifications |
 | ORD-020 | CONFIRMED | Table QR flow as above, including staff acceptance before Confirmed | PRD-ORD-020.1, PRD-ORD-020.AC1, PRD-ORD-020.AC2 | §22. Table QR Ordering |
-| ORD-021 | CONFIRMED | Name/phone not required unless the selected flow requests customer details | PRD-ORD-021.1, PRD-ORD-021.AC1 | §22. Table QR Ordering |
+| ORD-021 | CONFIRMED | Table QR orders do not request customer details; details only on the no-table QR (amended A2) | PRD-ORD-021.1, PRD-ORD-021.AC1, PRD-ORD-021.AC2 | §22. Table QR Ordering |
 | ORD-022 | CONFIRMED | Customer can track order status | PRD-ORD-022.1, PRD-ORD-022.AC1 | §21. QR Ordering |
 | ORD-030 | CONFIRMED | Customer MUST provide name and phone before placing the order | PRD-ORD-030.1, PRD-ORD-030.AC1 | §23. Tableless QR Ordering |
 | ORD-031 | CONFIRMED | No OTP / mandatory verification | PRD-ORD-031.1, PRD-ORD-031.AC1 | §23. Tableless QR Ordering |
@@ -291,6 +297,7 @@ Regenerated from [SPEC.md](../../SPEC.md) (v1.1, amendment A1) and [PRD.md](PRD.
 | ORD-091 | CONFIRMED | A table session has at most one active order context; additional items are added to the e… | PRD-ORD-091.1, via PRD-TABLE-015.1 | §31. Order Modification; §20. Table and Floor Management |
 | ORD-092 | CONFIRMED | Every cancellation record preserves actor, reason, timestamp, previous state and resultin… | PRD-ORD-092.1, PRD-ORD-092.AC1 | §32. Order Cancellation |
 | ORD-093 | CONFIRMED | Kitchen acknowledges a Preparing/Ready cancellation request by accepting (item → Cancelle… | PRD-ORD-093.1, PRD-ORD-093.AC1, PRD-ORD-093.AC2, PRD-ORD-093.AC3 | §32. Order Cancellation |
+| ORD-094 | CONFIRMED | Abandoned customer Draft never offered back for resumption (A2) | PRD-ORD-094.1, PRD-ORD-094.AC1 | §29. Order Lifecycle |
 | KOT-001 | CONFIRMED | Initial KOT is sent when the order is Confirmed | PRD-KOT-001.1 | §33. KOT |
 | KOT-002 | CONFIRMED | Additional KOT for items added after the initial KOT | PRD-KOT-002.1, via PRD-ORD-080.1 | §33. KOT; §31. Order Modification |
 | KOT-003 | CONFIRMED | Cancellation KOT/update when a sent item is cancelled | PRD-KOT-003.1 | §33. KOT |
@@ -610,6 +617,7 @@ Regenerated from [SPEC.md](../../SPEC.md) (v1.1, amendment A1) and [PRD.md](PRD.
 | DF-12 | Private order-link/token mechanism (generation, expiry, revocation) | TRD |
 | DF-13 | Technical thresholds and delivery mechanics: Draft inactivity threshold (ORD-064), stale cancellation-request threshold (ORD-093), Daily AI… | TRD / UI-UX brief |
 | DF-14 | Billing calculation policies: GST/tax calculation, discount rules, service- and packaging-charge basis, rounding, invoice numbering, accoun… | Downstream specification (TRD / configuration) |
+| DF-15 | WhatsApp customer order tracking (status, acceptance/rejection, order-access link) — deferred by product owner (PO-AF-01) | Later product decision |
 
 DEFERRED SPEC rows: ONB-033, TABLE-013, KOT-010, KDS-015, AUDIT-006, ATTENTION-007, SEC-006. ONB-033 (DF-10) and KDS-015 (DF-08) were deferred *to the PRD* and are defined in PRD-ONB-033.1 and PRD-KDS-015.1.
 

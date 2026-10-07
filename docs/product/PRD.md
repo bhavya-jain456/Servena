@@ -5,9 +5,9 @@
 | Field | Value |
 |---|---|
 | Document | Phase 1 Product Requirements Document |
-| Version | **1.0 — FINALIZED — READY FOR PRODUCT-OWNER APPROVAL** (every open decision closed 2026-10-07; not yet approved by the product owner) |
+| Version | **1.1** — v1.0 APPROVED by product owner 2026-10-07 (canonical PRD for Phase 1); v1.1 records the product owner's Application Flow review decisions PO-AF-01…04 (SPEC amendment A2, 2026-10-07; §71.5) |
 | Date | 2026-10-07 |
-| Upstream (highest product source) | [SPEC v1.1](../../SPEC.md) — v1.0 approved 2026-10-07; v1.1 adds dated amendment A1 (2026-10-07) recording the decisions closed for this PRD |
+| Upstream (highest product source) | [SPEC v1.2](../../SPEC.md) — v1.0 approved 2026-10-07; v1.1 adds dated amendment A1 (2026-10-07) recording the decisions closed for this PRD; v1.2 adds amendment A2 (2026-10-07) recording PO-AF-01…04 |
 | Companion | [CAPABILITY-MAP.md](../../CAPABILITY-MAP.md) · [PRD_TRACEABILITY.md](PRD_TRACEABILITY.md) |
 | Background source | `SERVENA_Phase_1_User_Wise_Product_Workflow_and_Edge_Case_Hardening_v1.1.docx` (already reflected in SPEC) |
 | Downstream (not started) | TRD → Database Schema → UI/UX Design → Implementation Plan → Implementation |
@@ -355,6 +355,7 @@ Create Restaurant → Select Single/Multi Outlet → Create/Assign Owner → Bas
 - **PRD-ONB-013.1** If email is unavailable, the provisioned account remains recoverable and onboarding can be retried. *also: INTEG-003*
 - **PRD-ONB-014.1** Suspension is a platform-level state. While a restaurant is suspended no new business is possible — no new order can be created — but existing confirmed orders are not silently cancelled and may continue through kitchen, handoff and billing; existing bills may be finalized, paid and corrected under the normal authorization rules; all historical and audit data remain intact. Suspension never deletes data. *(OD-17)*
 - **PRD-ONB-015.1** The Owner may add outlets after initial provisioning; a Manager cannot create outlets. When a single-outlet organization receives a second outlet it becomes multi-outlet automatically: the existing outlet is unchanged, the Owner's organization-level visibility follows the existing Owner rules (PRD-ORG-006.1), and the new outlet needs its own operational setup and activation before accepting orders (PRD-ONB-030.1, PRD-ONB-032.1). *(OD-16)*
+- **PRD-ONB-016.1** A customer who scans a QR of a suspended or deactivated restaurant sees a page stating that the account has been suspended/blocked and to contact the SERVENA technical team to resolve it. No menu is shown and no order can be placed. *(PO-AF-03)*
 
 ### Permissions
 SuperAdmin only (platform role, outside the restaurant permission catalogue). SuperAdmin suspension/deactivation and Owner credential resets are audited (§53).
@@ -371,6 +372,7 @@ Invitation not received · Owner credential reset · wrong outlet structure · o
 - **PRD-ONB-009.AC1** Given SuperAdmin suspends a restaurant, then the suspension is recorded in the audit trail and no Day Close is created.
 - **PRD-ONB-014.AC1** Given a suspended restaurant, when anyone tries to create a new order, then it is refused; an order Confirmed before the suspension can still be prepared, handed off and billed; all existing orders, bills and audit records remain intact.
 - **PRD-ONB-015.AC1** Given a single-outlet organization, when the Owner adds a second outlet, then the organization becomes multi-outlet, the first outlet is unchanged, and the new outlet cannot take orders until it is set up and activated; given a Manager tries to add an outlet, then it is refused.
+- **PRD-ONB-016.AC1** Given a restaurant is suspended or deactivated, when a customer scans any of its QR codes, then a page says the account has been suspended/blocked and to contact the SERVENA technical team, no menu is shown, and no order can be created.
 - **PRD-ONB-012.AC1** Given a visitor without SuperAdmin provisioning, when they look for a way to create a restaurant, then none exists.
 
 ## 11. Owner Onboarding
@@ -947,7 +949,7 @@ Scan table QR → outlet + table identified → menu → build order → submit 
 
 ### Business Rules
 - **PRD-ORD-020.1** A table QR order follows the flow above, including staff acceptance before it becomes Confirmed.
-- **PRD-ORD-021.1** Name and phone are not required for table QR orders unless the selected flow asks for customer details.
+- **PRD-ORD-021.1** Table QR orders do not ask for the customer's name or phone. Customer details are requested only on the QR that has no table associated with it (tableless QR, PRD-ORD-030.1). *(amended — PO-AF-02)*
 - Acceptance rules: PRD-ORD-008.1.
 
 ### Permissions
@@ -963,6 +965,7 @@ Double submit (PRD-ORD-006.1) · item sold out during checkout (PRD-MENU-015.1) 
 - **PRD-ORD-020.AC1** Given a customer submits from a table QR, then the order shows as awaiting acceptance and no KOT exists yet.
 - **PRD-ORD-020.AC2** Given staff accepts it, then it becomes Confirmed and a KOT showing the table number reaches the KDS.
 - **PRD-ORD-021.AC1** Given a table QR order, when the customer submits without name or phone, then it is accepted for submission.
+- **PRD-ORD-021.AC2** Given a table QR order, then no customer-details step is presented; given a tableless QR order, then name and phone are required before submission (PRD-ORD-030.AC1).
 
 ## 23. Tableless QR Ordering
 
@@ -1158,6 +1161,7 @@ Cancelled = terminal outcome when authorized and applicable
 - **PRD-ORD-064.1** An abandoned Draft creates no KOT and no sale and never holds a table permanently (PRD-TABLE-007.1).
 - **PRD-ORD-064.2** A Draft is a persisted business object and remains identifiable as Draft in history. Draft lifetime and table-session occupancy are separate concepts: when a Draft becomes abandoned under the product's inactivity policy, its active table occupancy/session claim is released — the Draft is not deleted, and no sale and no KOT are created. The exact inactivity threshold is a TRD concern; the product guarantees that an abandoned Draft can never block a table permanently. This applies to uncommitted Drafts; an order awaiting acceptance has been submitted and is not an abandoned Draft. *(OD-14)*
 - **PRD-ORD-065.1** If every item of an order is cancelled before fulfillment, the order outcome is Cancelled, not Completed. If at least one item was fulfilled and all remaining items are cancelled, the order becomes Completed only when every item outcome is terminal and handoff is complete (PRD-ORD-063.1). *(OD-40)*
+- **PRD-ORD-094.1** An abandoned (uncommitted) customer Draft is never offered back to the customer for resumption; Phase 1 has no Draft-resumption capability. PRD-ORD-064.2 still applies: the Draft is kept, creates no KOT or sale, and releases its table claim. *(PO-AF-04)*
 
 ### Acceptance Criteria
 - **PRD-ORD-061.AC1** Given a Draft order, when anyone tries to move it directly to Ready, then it is refused and nothing changes.
@@ -1166,6 +1170,7 @@ Cancelled = terminal outcome when authorized and applicable
 - **PRD-ORD-065.AC1** Given an order whose every item was cancelled, then the order is Cancelled and is not offered feedback.
 - **PRD-ORD-064.AC1** Given a customer abandons a Draft, then no KOT is created and no sale is counted.
 - **PRD-ORD-064.AC2** Given an abandoned Draft whose table claim was released, then the Draft can still be found, identified as Draft, in history.
+- **PRD-ORD-094.AC1** Given a customer abandoned a Draft, when they scan the same QR again, then they start a new order and are not offered the abandoned Draft.
 
 ## 30. Order Item Lifecycle
 
@@ -2188,6 +2193,7 @@ Every error state below is observable by the user and leaves data unchanged (PRD
 | Other outlet's data requested | Refusal; no data shown | PRD-SEC-002.1 |
 | Inactive account | Sign-in refused | PRD-AUTH-006.1 |
 | Outlet Closed / not activated | "Ordering unavailable" | PRD-ORG-021.1, PRD-ONB-032.1 |
+| Restaurant suspended or deactivated — customer scans a QR | Page: account suspended/blocked; contact the SERVENA technical team; no menu, no ordering | PRD-ONB-016.1 |
 | Accept/reject while outlet Closed | Refused; order stays awaiting acceptance | PRD-ORG-033.1 |
 | Reorder of an ineligible order | Reorder not offered | PRD-CUSTOMER-020.1 |
 | Agent sensitive action without confirmation | Nothing executed until the Owner confirms | PRD-AI-029.1 |
@@ -2297,6 +2303,7 @@ Phase 1 is product-complete when:
 | DF-12 | Private order-link mechanism | DEFERRED | TRD |
 | DF-13 | Draft inactivity threshold; stale cancellation-request threshold; Daily AI Brief trigger, time and delivery; staff-alert device, transport and layout; offline-eligible action list; Owner Agent tool implementation | DEFERRED | TRD / UI-UX brief |
 | DF-14 / PQ-07 | Billing calculation policies: GST/tax calculation, discount rules, service- and packaging-charge basis, rounding, invoice numbering, accounting treatment beyond PRD-DAY-022.1 | DEFERRED | Downstream specification (TRD / configuration) |
+| DF-15 / PO-AF-01 | WhatsApp customer order tracking: how a WhatsApp customer receives order status, acceptance/rejection and the order-access link | DEFERRED by product owner ("ignore for now") | Later product decision |
 
 ## 71. Decision Record
 
@@ -2376,6 +2383,15 @@ Two further conflicts found during finalization were also resolved: ORD-088 ("on
 
 No ambiguity from this list remains open.
 
+### 71.5 Application Flow review decisions (SPEC amendment A2, 2026-10-07)
+
+| ID | Decision (as given by the product owner) | SPEC | PRD | Status |
+|---|---|---|---|---|
+| PO-AF-01 | WhatsApp order tracking — "ignore for now" | DF-15 | §70 DF-15 | DEFERRED |
+| PO-AF-02 | "There will be a QR which will not have any table number associated with it, and if the user wants to order they need to put their details." | ORD-021 (amended) | PRD-ORD-021.1 (amended), PRD-ORD-021.AC2 | CONFIRMED |
+| PO-AF-03 | "When users scan they see a page which says your account has been suspended/blocked, please contact the SERVENA technical team for resolving this." | ONB-016 | PRD-ONB-016.1, PRD-ONB-016.AC1 | CONFIRMED |
+| PO-AF-04 | Resuming an abandoned customer Draft — "not needed" | ORD-094 | PRD-ORD-094.1, PRD-ORD-094.AC1 | CONFIRMED |
+
 ---
 
-*End of PRD v1.0 — FINALIZED — READY FOR PRODUCT-OWNER APPROVAL. All product decisions are closed; the product owner's explicit approval of this PRD is still required. TRD work starts only after that approval.*
+*End of PRD v1.1 — v1.0 APPROVED by the product owner on 2026-10-07; v1.1 records decisions PO-AF-01…04 (2026-10-07). This is the canonical Phase 1 PRD; any change requires an explicit, dated product-owner decision (PRD-SOT-002.1). Next document: TRD (not started).*

@@ -5,10 +5,11 @@
 | Field | Value |
 |---|---|
 | Document | Phase 1 Canonical Product Specification (pre-PRD) |
-| Version | **1.1** — v1.0 APPROVED by product owner 2026-10-07; v1.1 adds dated amendment **A1 (2026-10-07)** recording the product owner's explicit decisions that closed every OPEN item during PRD finalization (§40) |
+| Version | **1.2** — v1.0 APPROVED by product owner 2026-10-07; v1.1 adds dated amendment **A1 (2026-10-07)** recording the product owner's explicit decisions that closed every OPEN item during PRD finalization; v1.2 adds dated amendment **A2 (2026-10-07)** recording the product owner's decisions **[PO-AF-01…04]** given during Application Flow review (§40) |
 | Date | 2026-10-07 |
 | Product source of truth | `SERVENA_Phase_1_User_Wise_Product_Workflow_and_Edge_Case_Hardening_v1.1.docx` — cited **[H§n]** |
 | Explicit user decisions | Locked decisions given 2026-10-07 — **[LD-n]** (numbered 1–40 in the order given) and the final action matrix — **[LD-MX]**; hardening instructions given 2026-10-07 — **[UD]** |
+| Application Flow decisions | Product-owner decisions given 2026-10-07 during review of `docs/APP_FLOW.md` — **[PO-AF-n]** (amendment A2, §40) |
 | Not used | `SERVENA_Phase_1_User_Wise_Product_Workflow_Specification.docx` (v1.0). No requirement depends on it. |
 | Companion | [CAPABILITY-MAP.md](CAPABILITY-MAP.md) |
 
@@ -213,8 +214,10 @@ SuperAdmin → Create Restaurant → Select Single/Multi Outlet → Create/Assig
 | ONB-013 | Email unavailable → provisioned account remains recoverable; onboarding retry path exists | H§34 | CONFIRMED |
 | ONB-014 | Suspension is a platform-level state: new business is blocked (no new order can be created); existing confirmed orders are not silently cancelled and may continue through kitchen, handoff and billing; existing bills may be finalized, paid and corrected under authorization rules; all historical and audit data remain intact; suspension never deletes data | OD-17 | CONFIRMED (OD-17; A1, 2026-10-07) |
 | ONB-015 | The Owner may add outlets after provisioning; a Manager cannot create outlets. Adding a second outlet makes a single-outlet organization multi-outlet automatically; the existing outlet is unchanged; Owner organization-level visibility follows the existing Owner rules; the new outlet needs its own operational setup and activation before accepting orders (ONB-030, ONB-032) | OD-16 | CONFIRMED (OD-16; A1, 2026-10-07) |
+| ONB-016 | A customer who scans a QR of a suspended or deactivated restaurant sees a page stating that the account has been suspended/blocked and to contact the SERVENA technical team to resolve it; no menu is shown and no order can be placed | PO-AF-03 | CONFIRMED (PO-AF-03; A2, 2026-10-07) |
 
 - ONB-013.AC1: Invite email fails → resend possible; restaurant intact.
+- ONB-016.AC1: QR scanned for a suspended or deactivated restaurant → suspended/blocked page with SERVENA technical-team contact instruction; no menu; no order created.
 
 ### 6.2 Owner operational setup [H§6]
 
@@ -511,7 +514,7 @@ Scan → outlet + table → menu → order → submit → staff receives → sta
 | ID | Requirement | Source | Status |
 |---|---|---|---|
 | ORD-020 | Table QR flow as above, including staff acceptance before Confirmed | H§15 | CONFIRMED |
-| ORD-021 | Name/phone not required unless the selected flow requests customer details | H§16 | CONFIRMED |
+| ORD-021 | Table QR orders do not request customer name/phone; customer details are requested only on the QR with no table associated (tableless QR, ORD-030) | H§16, PO-AF-02 | CONFIRMED (amended A2, 2026-10-07) |
 | ORD-022 | Customer can track order status | H§4, H§23, H§25 | CONFIRMED |
 
 ### 13.3 Tableless QR
@@ -601,6 +604,7 @@ Cancelled = terminal outcome when authorized and applicable
 | ORD-091 | A table session has at most one active order context; additional items are added to the existing active order | OD-35 | CONFIRMED (OD-35) |
 | ORD-092 | Every cancellation record preserves actor, reason, timestamp, previous state and resulting state | OD-34 | CONFIRMED (OD-34) |
 | ORD-093 | Kitchen acknowledges a Preparing/Ready cancellation request by accepting (item → Cancelled) or declining (item stays active). If the item reaches Served/Picked Up before the request is resolved, that terminal state stands and the request becomes a no-op kept in history/audit. An unresolved request stays visible, never cancels the item automatically, and when stale becomes an Attention item (stale threshold: DF-13) | OD-44 | CONFIRMED (OD-44; A1, 2026-10-07) |
+| ORD-094 | An abandoned (uncommitted) customer Draft is never offered back to the customer for resumption; Phase 1 has no Draft-resumption capability (ORD-064 still applies: Draft kept, no KOT, no sale, table claim released) | PO-AF-04 | CONFIRMED (PO-AF-04; A2, 2026-10-07) |
 
 - ORD-080.AC1: Add item after KOT → second KOT with only the new item; first KOT unchanged.
 
@@ -923,6 +927,7 @@ Discover Menu → Create Order → Submit → Staff Acceptance where applicable 
 | | Owner credential reset | ONB-010 |
 | | Wrong outlet structure | ONB-008 |
 | | Outlet added after provisioning | ONB-015 / OD-16 |
+| | QR scanned at a suspended or deactivated restaurant | ONB-016 / PO-AF-03 |
 | | Suspended during active operation | ONB-014 / OD-17 |
 | Menu | AI low-confidence field; Owner edits draft | AI-012, AI-013 |
 | | Duplicate item import | AI-016 |
@@ -965,7 +970,7 @@ Discover Menu → Create Order → Submit → Staff Acceptance where applicable 
 | | Reopen closed day | DAY-013, DAY-015, DAY-021, DAY-023 / OD-04, OD-47 |
 | Customer | QR without table | ORD-030…033 |
 | | Optional verification | DF-04 |
-| | Customer abandons order | ORD-064 |
+| | Customer abandons order | ORD-064, ORD-094 / PO-AF-04 |
 | | Customer sees only own order | CUSTOMER-003 |
 | | Reorder item unavailable | CUSTOMER-014 |
 | | Feedback after completion | FEEDBACK-001 |
@@ -1099,16 +1104,16 @@ ORD-071 (item states) left this list: it became CONFIRMED because OD-34 uses exa
 
 ## 35. Requirement Count
 
-Requirement-table rows (excludes SOT bullets, ACT rows, NG rows, PC rows, and the §34 / §2.3 reference tables); recomputed for v1.1:
+Requirement-table rows (excludes SOT bullets, ACT rows, NG rows, PC rows, and the §34 / §2.3 reference tables); recomputed for v1.2:
 
 | Status | Rows |
 |---|---|
-| CONFIRMED | 368 |
+| CONFIRMED | 370 |
 | PROPOSED | 0 |
 | OPEN | 0 |
 | DEFERRED | 7 |
 | EXCLUDED | 3 (+ NG-001…016) |
-| **Total** | **378** |
+| **Total** | **380** |
 
 Action inventory: 88 ACT rows (87 active, ACT-TBL-02 WITHDRAWN); every cell is decided — no `?` cells remain (RBAC-019).
 
@@ -1183,6 +1188,7 @@ No OPEN or PROPOSED items remain in this SPEC.
 | DF-12 | Private order-link/token mechanism (generation, expiry, revocation) | TRD |
 | DF-13 | Technical thresholds and delivery mechanics: Draft inactivity threshold (ORD-064), stale cancellation-request threshold (ORD-093), Daily AI Brief trigger/time/delivery mechanism (AI-026), staff-alert device/notification transport/layout, offline-eligible action list (OFFLINE-008), Owner Agent tool implementation (AI-029) — added A1 | TRD / UI-UX brief |
 | DF-14 | Billing calculation policies: GST/tax calculation, discount rules, service- and packaging-charge basis, rounding, invoice numbering, accounting treatment beyond DAY-022 — added A1 | Downstream specification (TRD / configuration) |
+| DF-15 | WhatsApp customer order tracking: how a WhatsApp customer receives order status, acceptance/rejection and the order-access link — deferred by the product owner ("ignore for now") | Later product decision (PO-AF-01, A2) |
 
 ## 38. Contradictions and Reconciliation
 
@@ -1221,7 +1227,7 @@ No open contradictions.
 
 ## 39. Approval Status
 
-**SPEC v1.1** — v1.0 APPROVED by the product owner on 2026-10-07; amendment A1 (2026-10-07) records the product owner's explicit decisions issued for PRD finalization.
+**SPEC v1.2** — v1.0 APPROVED by the product owner on 2026-10-07; amendment A1 (2026-10-07) records the product owner's explicit decisions issued for PRD finalization; amendment A2 (2026-10-07) records the product owner's decisions given during Application Flow review.
 
 - No OPEN or PROPOSED items remain; no open contradictions; every permission cell is decided.
 - DEFERRED items (§37) belong to the documents named there.
@@ -1254,3 +1260,26 @@ ORG-032 (OD-43) · ORG-033 (OD-31) · ORG-034 (OD-42) · ONB-014 (OD-17) · ONB-
 **4. Deferred items added** — DF-13 (technical thresholds and delivery mechanics) and DF-14 (billing calculation policies). DF-08 and DF-10 are now satisfied by PRD v1.0.
 
 **5. Unchanged** — every other requirement, including all LD-derived rules, is unchanged.
+
+### A2 — 2026-10-07 — Application Flow review decisions
+
+**Reason for amendment.** During review of `docs/APP_FLOW.md` the product owner gave explicit decisions on four navigation gaps (APP_FLOW NAV-GAP-028, -031, -032, -034). Under SOT-002 they are recorded here with date and ID. No requirement ID was renumbered or reused.
+
+| Decision | As given by the product owner | SPEC effect |
+|---|---|---|
+| PO-AF-01 | WhatsApp order tracking — "ignore for now" | DF-15 added (DEFERRED) |
+| PO-AF-02 | "There will be a QR which will not have any table number associated with it, and if the user wants to order they need to put their details." | ORD-021 amended |
+| PO-AF-03 | "When users scan they see a page which says your account has been suspended/blocked, please contact the SERVENA technical team for resolving this." | ONB-016 added (+ ONB-016.AC1) |
+| PO-AF-04 | Resuming an abandoned customer Draft — "not needed" | ORD-094 added |
+
+**1. Amended CONFIRMED requirement (original wording preserved)**
+
+| SPEC ID | Original wording (v1.1) | Final resolution |
+|---|---|---|
+| ORD-021 | "Name/phone not required unless the selected flow requests customer details" | Table QR orders do not request customer details; details are requested only on the no-table QR (ORD-030) (PO-AF-02) |
+
+**2. New CONFIRMED requirements** — ONB-016 (PO-AF-03), ORD-094 (PO-AF-04).
+
+**3. Deferred item added** — DF-15 (PO-AF-01).
+
+**4. Unchanged** — every other requirement, including ONB-014 (suspension keeps existing work running; ONB-016 governs only what a scanning customer sees), is unchanged.
