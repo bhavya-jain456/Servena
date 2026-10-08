@@ -10,7 +10,7 @@
 | Document | SERVENA Technical Requirements & Design |
 | Version | **TRD v1.0** |
 | Status | **DRAFT** — for product-owner and engineering review; becomes the technical authority for Database Schema, UI/UX brief, Implementation Plan and Implementation once approved |
-| Date | 2026-10-07 |
+| Date | 2026-10-07 · amended 2026-10-08 (§5.2 C9 persisted enum representation; §16.2 soft-delete wording; §25.9 product-owner billing decisions PO-TRD-03 closing PB-5 (re-fire part), PB-6, PB-8, PB-15) |
 | Upstream (canonical) | SPEC.md **v1.3** (A3 — adds PO-TRD-01/02 after this TRD's first draft; A2 content unchanged) · docs/product/PRD.md **v1.2** · docs/APP_FLOW.md **v1.4** |
 | Reference implementation style | `backend/` boilerplate (commit `08c719a`, Docker removal `d3abf32`) |
 | Companions | CAPABILITY-MAP.md (module ids) · docs/product/PRD_TRACEABILITY.md |
@@ -128,7 +128,7 @@ The `backend/` boilerplate is the **primary implementation-style reference**. It
 | C6 | Joi 17 + `joiUtils` extensions | Adopted as the **only** backend validation library | Body validation becomes **strict** (`.unknown(false)`/`stripUnknown`) instead of `.unknown(true)` | Mass-assignment/NoSQL-injection hardening (§35). Zod is used **only** in the frontend (forms); the contract between them is OpenAPI |
 | C7 | Swagger 2.0 generated from Joi | Adopted generator approach (route table → `swaggerService`) | Emit **OpenAPI 3.0.3**; add response schemas, `Idempotency-Key`, `X-Outlet-Id` parameters, bearer scheme | Required "OpenAPI"; Swagger 2.0 cannot model bearer/refresh cleanly |
 | C8 | Envelope `{statusCode,status,msg,type,data}`; throw `createErrorResponse` | Adopted unchanged for **all** REST responses | Additive: `data` carries machine detail on errors (`{factor, code, current}` — §16.5); new error types `CONFLICT` (409), `UNPROCESSABLE`, `TOO_MANY_REQUESTS` (429), `SERVICE_UNAVAILABLE` (503); `201` allowed for creates; `MONGO_EXCEPTION` statusCode `100` corrected to `500` | RBAC-016 requires naming the failed factor; concurrency needs 409. `createErrorResponse` currently throws `TypeError` on an unknown type — new types are registered, never ad-hoc |
-| C9 | Numeric enums in `utils/constants.js` | Adopted: all domain enums as numeric constants + string error types | Constants file split into `utils/constants/<area>.js` re-exported from `constants.js` | One 2 000-line file does not scale; import surface unchanged |
+| C9 | Numeric enums in `utils/constants.js` | Adopted in **shape**: every domain enum is a frozen constants object consumed through `Object.values(...)`; string error types unchanged | **Persisted enum values use `UPPER_SNAKE_CASE` strings. Numeric enum identifiers are not persisted.** State and enum names written in this TRD in other casings (e.g. `Sent`, `KOT_Sent`, `NotPaid`) are names: each maps one-to-one to its `UPPER_SNAKE_CASE` persisted value, and API/wire spelling is unchanged. Constants file split into `utils/constants/<area>.js` re-exported from `constants.js` | Conditional writes, partial-index filters and audit before/after (§15.0 M2, §32.2, §37.3) and the role enum (§13.2) are already string-valued; strings stay legible and immune to re-ordering. One 2 000-line file does not scale; import surface unchanged. *(Amended 2026-10-08, resolves schema conflict UC-2; no product, state-machine or API behaviour changes.)* |
 | C10 | Models: `<noun>Model.js`, plural lowercase collection names, `timestamps`, `versionKey:false`, compound indexes at bottom | Adopted | **Explicit `rev` integer** on concurrency-sensitive aggregates (§38.2); a **tenancy-guard plugin** on every tenant model (§11.4) | `versionKey:false` removes Mongoose's `__v`; a visible `rev` is also exposed to clients for TABLE-008. Schema detail is the next document |
 | C11 | `userModel` carries `enabled2FA`, `isPhoneVerified`, `signupStep`, `deviceToken` | — | These fields are **not carried forward** (the schema stage removes them) | AUTH-002 / NG-012 forbid 2FA; ONB-012 forbids self-signup (already noted in SPEC §32) |
 | C12 | `sessions` collection; JWT signed with `JWT_SECRET`; `ADMIN_JWT_SIGN_KEY` exists | Adopted: session record is authoritative; `ADMIN_JWT_SIGN_KEY` signs SuperAdmin tokens | **Remove the JWT-decode fallback** in `validateUser` (valid signature alone no longer authenticates); add refresh-token rotation | The fallback makes revocation impossible, contradicting C-REVOKE/AUTH-006 |
@@ -904,7 +904,7 @@ Hold / Void / Re-fire (ORD-073, AF-033…035) add **no item state**:
 |---|---|---|
 | **Hold** (ACT-MOD-03/06) | `held` flag + hold history on the item/order; progress transitions blocked while held | The product defines no *release* action (AMB-02); `held` can be cleared only by an authorized actor via the same atom — **PB-5**: release authority, KDS effect and readiness effect while held are undecided; implementation of release is blocked |
 | **Void** (ACT-MOD-04/07) | A cancellation with `kind=VOID`; record preserved, reason required; once kitchen-processed follows ORD-082/088 state-safety | Distinct audit action |
-| **Re-fire** (ACT-KOT-04) | New additional-KOT line referencing the original item (`refireOf`); original history intact | Commercial/bill effect undecided (AMB-02, **PB-5**) — KOT/KDS part is buildable; bill effect is not |
+| **Re-fire** (ACT-KOT-04) | New additional-KOT line referencing the original item (`refireOf`); original history intact | **Kitchen-only** (PO-TRD-03 §25.9.4): no order item, no item state, no bill line, no money; kitchen cancellation on a Finalized bill is refused (K1) |
 
 ### 15.3 KDS (derived, not stored)
 
@@ -933,16 +933,15 @@ stateDiagram-v2
   Draft --> Finalized: ACT-BIL-04
   Finalized --> Reopened: ACT-BIL-05 (reason, paid or not)
   Reopened --> Finalized: ACT-BIL-04 (re-finalization)
-  Draft --> Cancelled: ACT-BIL-06
-  Finalized --> Cancelled: ACT-BIL-06
-  Reopened --> Cancelled: ACT-BIL-06
+  Finalized --> Cancelled: ACT-BIL-06 (reason mandatory, §25.9)
+  Finalized --> Refunded: ACT-BIL-07 refund recorded (partial/full, §25.9)
 ```
 
 | Aspect | Rule |
 |---|---|
-| Statuses | `status ∈ {Draft, Finalized, Reopened, Cancelled}`. Payment status is **separate** (§15.6). A `Refunded` classification exists upstream (BILL-002, ANALYTICS-011) but its entry condition is undefined (AMB-05, **PB-8**) — the TRD stores refund **records** (authoritative) and reserves, but does not implement, a bill-level `Refunded` label |
-| Forbidden | Edit of a Finalized bill (BILL-004); Draft → Reopened (a Draft is corrected without Reopen — PAY-012); Cancelled → any; Finalized → Draft |
-| Cancel preconditions/effects | Reason, payment/order effect and re-billing after cancellation are undefined (AMB-11, **PB-6**). `canCancelBill()` is a guard stub; **AF-047 is not built until decided**. BILL-007 holds regardless: cancellation never auto-creates a refund |
+| Statuses | `status ∈ {Draft, Finalized, Reopened, Cancelled, Refunded}` (SPEC BILL-002, APP_FLOW §16.1). Payment status is **separate** (§15.6). `Refunded` is entered from `Finalized` when a refund is recorded against a bill that has a payment; "partial / full" is derived, not a second status; lifecycle rules **§25.9.2** (PO-TRD-03) |
+| Forbidden | Edit of a Finalized bill (BILL-004); Draft → Reopened (a Draft is corrected without Reopen — PAY-012); Cancelled → any; Refunded → any (§25.9.2); Draft/Reopened → Cancelled (cancellation only from Finalized, §25.9.6); Finalized → Draft |
+| Cancel preconditions/effects | **Decided (PO-TRD-03, §25.9.6):** only from `Finalized`; mandatory reason; status change only — payments stay, no automatic refund (BILL-007), order unchanged, no replacement bill; writes a `CANCELLATION` revision with a negative sales delta. PB-6 closed |
 | Finalize | In one transaction: recompute totals deterministically (§25.4), freeze a **finalized snapshot** (revision n), set `Finalized`; allowed while the outlet is Closed (ORG-027) |
 | Reopen | Requires reason (BILL-014); appends a **bill revision** record preserving the prior snapshot (BILL-011); allowed while Closed (ORG-034); audited |
 | Concurrency | `rev` conditional writes (§38); two cashiers finalizing → one wins, the other gets the existing result (M7) |
@@ -952,7 +951,7 @@ stateDiagram-v2
 
 ### 15.6 Payment status (derived) and refunds
 
-`paymentStatus ∈ {NotPaid, Paid}` (PAY-010). It is **derived inside the same transaction** as every payment/refund/bill-total change: `Paid` iff `recordedPaymentsTotal ≥ billTotal` (and a bill total > 0), else `NotPaid`. *Partially paid* is a derivable quantity (`recorded > 0 && outstanding > 0`), **not** a third persisted status, because SPEC PAY-010 defines exactly two statuses; a UI may display it. `overpayment = max(0, recorded − total)` is derived and shown explicitly (PAY-012). Behaviour after refunds (AMB-05, **PB-8**) is not decided: refunds are recorded; their effect on `paymentStatus` is a guard-isolated function pending decision.
+`paymentStatus ∈ {NotPaid, Paid}` (PAY-010). It is **derived inside the same transaction** as every payment/refund/bill-total change: `Paid` iff `recordedPaymentsTotal ≥ billTotal` (and a bill total > 0), else `NotPaid`. *Partially paid* is a derivable quantity (`recorded > 0 && outstanding > 0`), **not** a third persisted status, because SPEC PAY-010 defines exactly two statuses; a UI may display it. `overpayment = max(0, recorded − total)` is derived and shown explicitly (PAY-012). After refunds (PB-8, **decided — PO-TRD-03 §25.9.1**): `paymentStatus` and `outstanding` use the gross recorded payments; a refund nets against **overpayment only** (`overpayment = max(0, recorded − total − refunded)`), never creates an outstanding balance, and moves a Finalized bill to `Refunded` (§25.9.2).
 
 ### 15.7 Attention item
 
@@ -1031,7 +1030,7 @@ Order differs from the boilerplate only by inserting **authorize** and **idempot
 |---|---|
 | Base path | `/api/v1` (C5). `v2` folder reserved for breaking changes; v1 stays additive-only (§40.7) |
 | Resources | Plural nouns, `kebab-case` segments, ids as path params. State transitions and operations are **sub-resource POSTs**: `POST /orders/{id}/accept`, `/orders/{id}/items`, `/bills/{id}/finalize`, `/days/{id}/close`. No verbs in resource names except these named operations |
-| Methods | `GET` read · `POST` create/operation · `PATCH` partial update (requires `rev`) · `DELETE` only for config entities (soft, status=3) — **never** for business records (F9) |
+| Methods | `GET` read · `POST` create/operation · `PATCH` partial update (requires `rev`) · `DELETE` only for config entities (soft: `status` = `DELETED`, the boilerplate's `3`) — **never** for business records (F9) |
 | Operational scope | `X-Outlet-Id` header (TD-TENANT-1); org-level and platform routes omit it |
 | Money | Integer paise only: fields suffixed `…Paise` (`totalPaise`, `unitPricePaise`); strings/floats rejected by Joi (`Joi.number().integer().min(0).max(Number.MAX_SAFE_INTEGER)`) |
 | Time | ISO-8601 UTC strings; the server never trusts client time for business facts (M5) |
@@ -1772,7 +1771,7 @@ sequenceDiagram
 
 ### 23.7 Re-fire, hold, void at the kitchen
 
-KDS shows re-fired work as additional-KOT lines referencing the original (§15.2). Hold pauses progress; the release/KDS effect is **PB-5** and is not built. Void follows cancellation state-safety.
+KDS shows re-fired work as additional-KOT lines referencing the original (§15.2). Re-fire is kitchen-only (§25.9.4). Hold pauses progress; the release/KDS effect remains **PB-5 (hold release only)** and is not built. Void follows cancellation state-safety.
 
 ### 23.8 Reconnect and eventual consistency
 
@@ -1829,7 +1828,7 @@ State machine: §15.5. `Draft` → `Finalized` → `Reopened` → `Finalized`, o
 | Discount / charges | ACT-BIL-02 / 03 | Owner, Manager, Cashier | Draft/Reopened only; audited (BILL-013) |
 | Finalize | ACT-BIL-04 | Owner, Manager, Cashier, Waiter | Allowed while outlet Closed (ORG-027) |
 | Reopen | ACT-BIL-05 | Owner, Manager, Cashier, **Waiter** (BILL-017) | **Reason required** (BILL-014); paid or unpaid; allowed while Closed (ORG-034); audited |
-| Cancel | ACT-BIL-06 | Owner, Manager, Cashier | Rules **PB-6** |
+| Cancel | ACT-BIL-06 | Owner, Manager, Cashier | Rules: §25.9.6 (PO-TRD-03) |
 | Print / reprint | ACT-BIL-08 | **Cashier** (per §9 matrix) | Never mutates (§25.7) |
 
 Waiter direct edit of a **paid** Finalized bill is denied unless the Reopen correction workflow is used (BILL-016): the same Finalized-state guard blocks every non-reopen edit regardless of payment status.
@@ -1860,10 +1859,10 @@ computeBill(lineSnapshots[], adjustments[], policy) → {
 |---|---|---|
 | 1 | Tax treatment | Menu prices are **tax-inclusive**; GST rate and components are set per item or category in the menu; **CGST+SGST only** (no IGST in Phase 1) |
 | 2 | Discounts | Percent or flat, **whole bill**, applied **before tax**, **no cap**; reason handling per PB-19; audited (BILL-013) |
-| 3 | Service / packaging charges | Configured **per outlet**; **off by default**; taxed at the rate of the items they apply to |
+| 3 | Service / packaging charges | Configured **per outlet**; **off by default**; taxed at the rate of the items they apply to — form, base and apportionment: **§25.9.3** (PO-TRD-03) |
 | 4 | Rounding | Tax rounded **per line, half-up**; bill total rounded **to the nearest rupee**, shown as a separate **round-off line** |
-| 5 | Invoice numbering | One sequence **per outlet**, **resets each 1 April** (Indian financial year), prefixed with an outlet code; a **cancelled bill keeps its number** |
-| 6 | Day Close totals | **Gross sales** = Σ finalized bill totals; **net sales** = gross − refunds recorded that day |
+| 5 | Invoice numbering | One sequence **per outlet**, **resets each 1 April** (Indian financial year), prefixed with an outlet code; a **cancelled bill keeps its number**; one number per bill across revisions: **§25.9.5** |
+| 6 | Day Close totals | **Gross sales** = Σ finalized bill totals; **net sales** = gross − refunds recorded that day — correction deltas and cancelled-bill refunds: **§25.9.7** |
 
 Consequences: `TD-BILL-1` stays the mechanism; the development-only policy is replaced by this one; invoice numbers are allocated by a Mongo counter in the finalization transaction (not Redis); taxes and the round-off line are stored in the finalized revision. Items 1, 4 and 5 may carry GST-compliance implications — **advise the product owner to confirm with their accountant**; changing a value later is a policy/config change with a new `calcVersion`, never a rewrite of finalized bills.
 
@@ -1873,12 +1872,12 @@ Consequences: `TD-BILL-1` stays the mechanism; the development-only policy is re
 |---|---|
 | Finalize | One transaction: load bill (`rev`), recompute with `computeBill`, store an immutable **revision** `{n, totals, taxBreakdown, adjustments, lines (frozen copy), calcVersion, finalizedBy, finalizedAt, businessDayId}`, set `Finalized`; sales for DAY-022 are attributed to this `businessDayId` |
 | Reopen | Appends a **reopen event** (reason, actor, at, businessDayId); status `Reopened`; prior revision retained untouched |
-| Re-finalize | Appends revision `n+1`; both revisions remain; `Finalized` snapshot always readable. Corrections therefore keep **original business-day attribution and actual timestamp** (DAY-022): revision n+1 records its own `businessDayId` (when it happened) and `attributedDayId` (the original bill's day) — `TD-BILL-2` |
+| Re-finalize | Appends revision `n+1`; both revisions remain; the bill keeps its **one invoice number** (printouts of `n ≥ 2` read "Revised n", §25.9.5). Each revision stores `previousTotalPaise` and `deltaPaise`; its Gross contribution is the **delta**, counted on the day it actually happens (`businessDayId`), with `attributedDayId` = the original bill's day — `TD-BILL-2`, §25.9.7 |
 | Immutability | No update/delete path exists for revisions (F9) |
 
 ### 25.6 Adjustments
 
-Discounts and service/packaging adjustments are recorded as adjustment entries (actor, amount basis, reason where required, timestamp) on a **Draft/Reopened** bill; each is audited (BILL-013, AUDIT-002 "discounts"). Their rules are PO-TRD-01 (percent/flat, whole bill, before tax, no cap); the TRD enforces only state, permission, audit and integer arithmetic.
+Discounts and service/packaging adjustments are recorded as adjustment entries (actor, amount basis, reason where required, timestamp) on a **Draft/Reopened** bill; each is audited (BILL-013, AUDIT-002 "discounts"). Discount rules are PO-TRD-01 (percent/flat, whole bill, before tax, no cap); charge rules are §25.9.3 (PO-TRD-03); the TRD enforces only state, permission, audit and integer arithmetic.
 
 ### 25.7 Print, digital bill, reprint (BILL-008/009)
 
@@ -1891,7 +1890,77 @@ Discounts and service/packaging adjustments are recorded as adjustment entries (
 
 ### 25.8 Bill events and cross-effects
 
-`bill.created` → table `Occupied → Billing` (T5); `bill.finalized` → table-state guard for T6, Day fence; `bill.reopened` → table `Billing → Occupied` is **not** automatic (bill state does not change table state beyond T5/T6); `bill.cancelled` → effect on order/table per **PB-6**. Realtime to `billing` room.
+`bill.created` → table `Occupied → Billing` (T5); `bill.finalized` → table-state guard for T6, Day fence; `bill.reopened` → table `Billing → Occupied` is **not** automatic (bill state does not change table state beyond T5/T6); `bill.cancelled` → the order and table are **unchanged** (§25.9.6); the bill is resolved. Realtime to `billing` room.
+
+### 25.9 Product-owner billing decisions — PO-TRD-03 (2026-10-08)
+
+*Recorded here as the technical form of seven product-owner decisions (PO-1 … PO-6 and OD-DB-27 of the Database Schema closure pass). They close PB-5 (re-fire and kitchen cancellation on a Finalized bill), PB-6, PB-8 and PB-15. Hold **release** (the other half of PB-5) stays open. SPEC/PRD/APP_FLOW are not edited by this TRD amendment: they remain silent (AMB-02/05/11/14 are "not defined", not contradicted), and recording the decisions as a SPEC amendment is a governance follow-up.* All amounts are integer paise; `P` = Σ effective payment entries, `F` = Σ refunds, `T` = bill total.
+
+**1. Refund netting — overpayment only (PO-1).**
+
+```
+outstanding   = max(0, T − P)
+paymentStatus = (P ≥ T and T > 0) ? Paid : NotPaid
+overpayment   = max(0, P − T − F)
+refundKind    = F = P ? FULL : (0 < F < P ? PARTIAL : none)        // derived, never stored
+```
+
+A refund never reduces `P`, never changes `T`, and never creates an outstanding balance. It clears overpayment up to the excess and is otherwise visible through `F`, the bill status `Refunded` and the refund ledger. "Full" means *all recorded payments were refunded* (`F = P`), not "equal to the bill total"; refunding only an overpayment's excess is therefore partial. Invariant `F ≤ P` is checked in every refund and in every payment correction (a correction that would make `P' < F` is refused).
+
+**2. Bill status `Refunded` and its lifecycle (OD-DB-27).** The status set is `Draft · Finalized · Reopened · Cancelled · Refunded` (SPEC BILL-002) with `paymentStatus` separate.
+
+| Event | Bill status before | Effect |
+|---|---|---|
+| First refund on a bill that has a payment | `Finalized` | `Finalized → Refunded` in the **same transaction** as the refund record (explicit staff action ACT-BIL-07) |
+| Further refund while `F < P` | `Refunded` | Ledger record only; status stays `Refunded` (partial becomes full by derivation) |
+| Refund | `Draft`, `Reopened` | Ledger record only (PAY-012 overpayment resolution); **no** status change |
+| Refund | `Cancelled` | Ledger record only; status stays `Cancelled` |
+| Reopen, Cancel, record payment, edit lines/adjustments | `Refunded` | **Refused** — no edge leaves `Refunded`, and nothing may change a refunded bill's total |
+| Payment correction | `Refunded` | Allowed (explicit, audited) only if `P' ≥ F` |
+| Any edge not listed here or in §15.5 | any | Forbidden (§15.12) |
+
+*Rationale (most conservative rule):* Reopen would let `T` change beneath refunds already recorded; Cancel would reverse a sale that a refund already deducts from Net (double count, §25.9.7); a late payment would silently re-open a settled bill. A `Refunded` bill is *resolved* (ANALYTICS-011).
+
+**3. Service / packaging charges (PO-2 — C + X).**
+- *Configuration.* Each outlet configures, per charge kind (`SERVICE`, `PACKAGING`): enabled (default off), `basis ∈ {PERCENT, FLAT}`, `valueBps` or `valuePaise`.
+- *Application.* Staff apply a charge to a Draft/Reopened bill (ACT-BIL-03) as an adjustment entry that **snapshots** `kind, basis, value` at that moment. Changing outlet configuration later never alters an existing entry on any bill; a finalized revision is frozen.
+- *Amount.* PERCENT: base = the **discounted item subtotal** (subtotal − whole-bill discount; tax-inclusive; other charges excluded, no compounding); `amount = round_half_up(base × valueBps / 10 000)` using `BigInt`; recomputed with the bill while Draft/Reopened. FLAT: `valuePaise`, once per bill.
+- *Tax (X).* Charge amounts are tax-inclusive on the same basis as menu prices and discounts (PO-TRD-01 #1–#2) *[derived from those decisions; the accountant confirmation of GST items stands]*. The charge is apportioned across the bill's tax-rate groups **in proportion to each group's taxable value (after the discount)** by the largest-remainder method (integer-exact: parts sum to the charge; ties resolved by ascending `rateBps`); each part is taxed as a pseudo-line at its group's rate with **per-line half-up** rounding (PO-TRD-01 #4). The parts and the resulting tax are stored in the revision (`charges[].allocations[]`, `taxBreakdown[]`).
+
+**4. Re-fire is kitchen-only; kitchen cancellation after finalization is refused (PO-3 — A + K1).**
+
+| Layer | Re-fire |
+|---|---|
+| Kitchen | A new **additional-KOT line** referencing the original item (§15.2); shown on the KDS as additional work; no new KOT kind |
+| Order item | **No** new `orderItems` row and **no** item-state change; the original item and its history are untouched. Completion of re-fired preparation is not tracked as a state (consistent with §15.2 "no item state") |
+| Bill | Unaffected: bill lines come only from non-cancelled order items |
+| Financial | Unaffected: no money field is written |
+
+K1: while the order's bill is `Finalized`, `Refunded` or `Cancelled`, any cancellation or void that would change billable lines — **by Kitchen or anyone else** — is refused (`409 STATE_INVALID`, "Reopen the bill first"). It is allowed while there is no bill or the bill is `Draft` or `Reopened`. Re-fire stays allowed in every bill status (re-fire of a Cancelled item remains refused).
+
+**5. One invoice number per bill (PO-4 — A).** The number is allocated once, at the bill's **first** finalization (§25.4 #5), and is reused by every later revision. Printouts of revision `n ≥ 2` carry the marker **"Revised n"** (derived from the revision number, never stored). No second invoice identity exists. Revisions stay auditable through `billRevisions`; GST-compliance review remains the accountant boundary of §25.4.
+
+**6. Bill cancellation (PO-5 — A).**
+- Allowed **only from `Finalized`** (any payment state), with a **mandatory reason**; audited. `Draft`/`Reopened` bills cannot be cancelled (a Reopened bill is re-finalized first).
+- Status change only: payments stay recorded and untouched; **no automatic refund** (BILL-007); the order is unchanged; **no replacement bill** (BILL-015: one bill per order) and no further items (the bill is resolved).
+- *Sales effect.* Writes an insert-only `billRevisions` record of kind `CANCELLATION` with `deltaPaise = −(latest finalized total)` stamped with the day of cancellation (§25.9.7). Cancellation is a DAY-025 transaction.
+- A refund recorded afterwards against the cancelled bill is cash-relevant (CASH-007) but does **not** deduct from Net sales (its sale was already reversed): it is stored with `deductsFromNet = false`.
+
+**7. Gross and Net sales; post-close corrections (PO-6 — B).** Each *finalization event* contributes a signed amount to the **day on which it actually occurs**, while keeping the bill's original attribution:
+
+| Event | Contribution to that day's Gross |
+|---|---|
+| First finalization (revision 1) | `+T₁` |
+| Re-finalization (revision n ≥ 2) | `+(Tₙ − Tₙ₋₁)` — only the **delta** |
+| Cancellation of a Finalized bill | `−(latest finalized total)` |
+| Reopen | `0` (the sale stays at its last finalized total until re-finalized) |
+
+```
+grossSales(D) = Σ deltaPaise of billRevisions with businessDayId = D        // signed
+netSales(D)   = grossSales(D) − Σ amount of refunds with recordedDayId = D and deductsFromNet = true   // signed, unclamped
+```
+
+Σ of Gross over all days equals Σ of the current totals of non-cancelled bills, so no amount is counted twice. A stored Day Close revision is **never mutated** by a later correction (AMB-14 closed); only Reopen Day → re-close recalculates a day, using the same formulas over the contributions stamped with that day. An "as-originally-attributed" view is a report: Σ `deltaPaise` grouped by `attributedDayId`.
 
 ---
 
@@ -1922,7 +1991,7 @@ overpayment     = max(0, recordedTotal − billTotal)          // shown explicit
 paymentStatus   = recordedTotal ≥ billTotal  ?  Paid : NotPaid // PAY-010
 ```
 
-Payment is **independent of finalization** and may be recorded against a Draft bill (PAY-010, PAY-012); when the bill total later changes, existing payments are kept and `outstanding`/`paymentStatus` are recalculated (PAY-012). The effect of refunds on `paymentStatus` is **PB-8** (guard-isolated).
+Payment is **independent of finalization** and may be recorded against a Draft bill (PAY-010, PAY-012); when the bill total later changes, existing payments are kept and `outstanding`/`paymentStatus` are recalculated (PAY-012). The effect of refunds is fixed by §25.9.1 (PO-TRD-03): `overpayment = max(0, recorded − total − refunded)`; `outstanding` and `paymentStatus` use gross recorded payments.
 
 ### 26.4 Recording flow (Diagram 10 — Billing → Payment)
 
@@ -1936,7 +2005,7 @@ sequenceDiagram
   CS->>API: POST /bills/{id}/payments {amountPaise, mode, reference?} + Idempotency-Key + X-Outlet-Id
   API->>API: authorize ACT-PAY-01 (factors 1-3) · validate integer paise · reference format
   API->>DB: BEGIN
-  API->>DB: load bill scoped (rev) · guard: bill not Cancelled · outlet Closed allowed (ORG-027)
+  API->>DB: load bill scoped (rev) · guard: bill not Cancelled or Refunded · outlet Closed allowed (ORG-027)
   API->>DB: insert payment entry (unique: bill+key, bill+reference)
   API->>DB: recompute recordedTotal/outstanding/overpayment/paymentStatus · $inc bill.rev
   API->>DB: day fence $inc txnCount (businessDayId = active day)
@@ -1956,7 +2025,7 @@ sequenceDiagram
 | Action | Atom | Rules |
 |---|---|---|
 | Correct payment | ACT-PAY-02 (Owner, Manager, Cashier) | Creates a superseding entry (§26.2); audited (PAY-007, BILL-013); the reason requirement is not enumerated upstream (AMB-21, **PB-19**) — the field is accepted and stored, mandatory-ness is a guard |
-| Refund (partial/full) | ACT-BIL-07 (Owner, Manager, Cashier) | Requires a recorded payment; allowed while outlet Closed (ORG-034); records PAY-013 fields; **Σ refunds ≤ Σ effective payments** (`TN-2`: integrity check — a refund cannot exceed what was paid; it is a data-consistency constraint, not a new business rule); audited; idempotent |
+| Refund (partial/full) | ACT-BIL-07 (Owner, Manager, Cashier) | Requires a recorded payment; allowed while outlet Closed (ORG-034); records PAY-013 fields; a first refund on a `Finalized` bill sets it `Refunded` in the same transaction (§25.9.2); stores `deductsFromNet` (false when the bill is `Cancelled`, §25.9.6); **Σ refunds ≤ Σ effective payments** (`TN-2`: integrity check — a refund cannot exceed what was paid; it is a data-consistency constraint, not a new business rule); audited; idempotent |
 | Cash refund | | Counts against expected cash of the day **recorded** (CASH-007) |
 
 ### 26.7 Razorpay integration boundary (no Phase 1 execution)
@@ -2029,7 +2098,7 @@ sequenceDiagram
 |---|---|
 | Atomicity (DAY-010) | Everything above is **one transaction**; on a lost connection the client calls `GET /days/current` and/or retries with the **same key** — the outcome is either "closed" (existing record returned) or "not closed" (executes), never duplicated (DAY-009) |
 | Warnings (DAY-020) | Orders not Completed/Cancelled (a Rejected order's treatment follows **PB-4**); customer orders awaiting acceptance; items Pending/Sent/Preparing/Ready; unresolved bills (Draft, Reopened, Finalized+NotPaid — ANALYTICS-011). They are shown and require explicit confirmation; **nothing is cancelled or altered** (DAY-012); they remain visible and in analytics (DAY-011) |
-| Totals (DAY-007, DAY-022) | Sales are **bill-finalization based**: Finalized+Paid contributes sales and paid amount; Finalized+Not Paid contributes sales and stays outstanding; Draft/Reopened are not sales. Stored **as components** (finalized total, discounts, refunds recorded, per-mode UPI/Cash/Card, expected/actual/variance); `grossSalesPaise`/`netSalesPaise` come from a policy function because the exact gross→net accounting formula is **PB-1/DF-14** |
+| Totals (DAY-007, DAY-022) | Sales are **finalization-event based**: each first finalization, re-finalization delta and cancellation reversal contributes a signed amount to the day it actually occurs (§25.9.7); Draft/Reopened bills add nothing until (re-)finalized. Stored **as components** (first-finalization total, correction delta, gross, discounts, refunds recorded, refunds on cancelled bills, net, per-mode UPI/Cash/Card, expected/actual/variance); `grossSalesPaise` and `netSalesPaise` are **signed** (PO-TRD-01 #6, PO-TRD-03) |
 | Cash (CASH-005…007) | Per outlet and day; no opening float; expected = cash payments recorded in the day − cash refunds recorded in it; variance = counted − expected; **variance never blocks close** (CASH-006) |
 | Concurrency | Redis lock reduces contention only; the arbiter is the day `rev`/status conditional write plus the fence (§38) |
 | Consistency snapshot | Totals are computed inside the transaction's snapshot; any concurrently committing fenced write conflicts and retries, so the record contains **every** transaction committed before it and **none** after (reporting consistency) |
@@ -2053,7 +2122,7 @@ Refusals (`409` with state message — PRD §65): not the most recent closed day
 
 ### 27.5 Post-close corrections (DAY-022, AMB-14)
 
-Refunds, payment corrections and re-finalizations after a close keep **both** their original `attributedDayId` and the actual timestamp/`recordedDayId` (§25.5, §26.2). Whether such a correction changes the **stored Day Close record** of the original day is undefined (AMB-14, **PB-15**): the TRD never mutates an existing Day Close revision; revisions are appended only by re-close.
+Refunds, payment corrections and re-finalizations after a close keep **both** their original `attributedDayId` and the actual timestamp/`recordedDayId` (§25.5, §26.2). A post-close correction **never changes the stored Day Close record** of the original day (PB-15 closed, PO-TRD-03 §25.9.7): a re-finalization contributes its delta, and a cancellation its reversal, to the day it actually happens; only Reopen Day → re-close recalculates a day.
 
 ### 27.6 Reporting and analytics consistency
 
@@ -3407,17 +3476,17 @@ Each maps to an **OPEN** item in APP_FLOW §31/§29.12 or an upstream delegation
 | **PB-2** | Provisioning validation; duplicates; one Owner across organizations | AMB-20 | Login identifiers unique platform-wide; user belongs to one organization | Multi-organization Owner; duplicate rules |
 | **PB-3** | Order-level label for mixed item states; add items to an already-Completed order | AMB-01 | Provisional least-advanced label (`TD-ORD-1`); `canAddItems` guard | Completed-order add-item branch of AF-030 |
 | **PB-4** | Name/terminal state/reporting class of a **rejected** customer order | AMB-03 | Terminal pre-Confirmed outcome with reason | Final naming, analytics classification |
-| **PB-5** | Hold release and KDS/readiness effect; re-fire bill effect; kitchen cancellation on a Finalized bill | AMB-02 | Hold flag; re-fire as additional KOT line | Hold release action; re-fire/kitchen-cancel bill effects |
-| **PB-6** | Cancel-bill preconditions, reason, payment/order effect, re-billing | AMB-11 | `canCancelBill` stub; no auto-refund (BILL-007) | AF-047 |
+| **PB-5** | Hold release and KDS/readiness effect. *(Re-fire bill effect and kitchen cancellation on a Finalized bill: **RESOLVED — PO-TRD-03, §25.9.4**)* | AMB-02 | Hold flag; re-fire is kitchen-only | Hold release action only |
+| ~~**PB-6**~~ | **RESOLVED — PO-TRD-03 (2026-10-08), §25.9.6:** cancel only from Finalized, mandatory reason, status-only, no refund / re-bill | AMB-11 | — | Nothing |
 | **PB-7** | Suspended vs Deactivated difference; reinstatement; add items/accept-reject while suspended | AMB-06 | Both enforced identically; sign-in allowed | Reinstatement flow; unspecified gate cells |
-| **PB-8** | Payment status/outstanding after refund; `Refunded` bill classification | AMB-05 | Refund records authoritative; status effect isolated | Bill-level `Refunded`; post-refund status |
+| ~~**PB-8**~~ | **RESOLVED — PO-TRD-03 (2026-10-08), §25.9.1–2:** refund nets against overpayment only; bill status `Refunded` (partial/full) | AMB-05 | — | Nothing |
 | **PB-9** | Attention auto-resolution; Dismissed vs Resolved meaning | AMB-18 | Manual states only | Any auto-resolution |
 | **PB-10** | Outlet Closed gaps: initial availability at activation; open table, discounts, cancel/hold/void/re-fire while Closed | AMB-07 | Gate returns "unspecified" | Those specific operations while Closed |
 | **PB-11** | Whether a customer table-QR Draft opens a session; concurrent pending submissions; acceptor without ACT-TBL-01 | AMB-04 | Independent pending add-batches; session created by accepting staff action (subject to this decision) | Table-QR acceptance when no session exists (AF-023/AF-018 interplay) |
 | **PB-12** | What "new assignment" means for On Break/Unavailable staff | AMB-08 | Availability recorded; no assignment subsystem (STAFF-013) | Enforcement of blocked assignments |
 | **PB-13** | Merge/split/move-items semantics (target order, order/bill effect) | AMB-09 | Envelope fixed (locks, txn, history, audit, no bill merge) | **AF-020, AF-021** (transfer AF-019 is unblocked) |
 | **PB-14** | Temporary availability overrides during a reopened day | AMB-12 | Day-id equality, isolated | Behaviour for overrides across Reopen |
-| **PB-15** | Whether post-close corrections change the stored Day Close record | AMB-14 | Never mutate; append revisions only on re-close | Day-total restatement |
+| ~~**PB-15**~~ | **RESOLVED — PO-TRD-03 (2026-10-08), §25.9.7:** never mutate a closed Day Close; corrections contribute deltas to the day they happen | AMB-14 | — | Nothing |
 | **PB-16** | WhatsApp ordering when AI is unavailable (deterministic path) | AMB-15 | Persist inbound, no partial orders, surface failure | Non-AI WhatsApp path |
 | **PB-17** | Reorder: table context from a private link; all-items-unavailable UX | AMB-16 | Reorder = Takeaway; link = one order (**multi-order link closed**: past orders are staff-only, for billing correction — product owner, 2026-10-07); no silent partial | Table-associated reorder |
 | **PB-18** | Owner Agent **permitted actions** catalogue | AMB-17 | Read-only registry; action framework ready | **AF-059** (AF-058 unblocked) |
